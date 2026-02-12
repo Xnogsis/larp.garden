@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pureraindrop</title>
+    <style>
+      @font-face {
+        font-family: EurostileBoldExtended;
+        src: url(EurostileBoldExtended.otf);
+      }
+
+      ::selection {
+        background: darkblue;
+      }
+
+      body {
+        background: blue;
+        color: white;
+        font-family: EurostileBoldExtended, sans-serif;
+        font-weight: bold;
+        font-size: 5rem;
+        margin: 0;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      #content-frame {
+        display: none;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+
+      .unlocked #hello-text { display: none; }
+      .unlocked #content-frame { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="hello-text">hello</div>
+    <iframe id="content-frame" src="about:blank"></iframe>
+
+    <script>
+        const secretCode = "abc123";
+        let inputBuffer = "";
+
+        function unlockSite() {
+            document.body.classList.add('unlocked');
+            document.getElementById('content-frame').src = "real-site.html";
+            document.cookie = "access_granted=true; max-age=" + (60 * 60 * 24 * 30) + "; path=/";
+        }
+
+        if (document.cookie.split(';').some((item) => item.trim().startsWith('access_granted=true'))) {
+            unlockSite();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key.length === 1) {
+                inputBuffer += e.key;
+                if (inputBuffer.length > secretCode.length) {
+                    inputBuffer = inputBuffer.substring(1);
+                }
+                if (inputBuffer === secretCode) {
+                    unlockSite();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
