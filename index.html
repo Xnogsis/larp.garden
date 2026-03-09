@@ -16,7 +16,6 @@
       }
 
       body {
-        /* Changed background to cherry red */
         background: #d2042d;
         color: #FAF9F6;
         font-family: EurostileBoldExtended, sans-serif;
@@ -48,27 +47,50 @@
     <iframe id="content-frame" src="about:blank"></iframe>
 
     <script>
-        const secretCode = "seahawks";
+        // Map your secret codes to their target URLs
+        const secretCodes = {
+            "seahawks": "real-site.html",
+            "antimatter": "antimatter.html",
+            "gn": "gn.html"
+        };
+        
         let inputBuffer = "";
+        // Find the longest code so we know how big to make the input buffer
+        const maxBufferLength = Math.max(...Object.keys(secretCodes).map(code => code.length));
 
-        function unlockSite() {
+        function unlockSite(targetUrl) {
             document.body.classList.add('unlocked');
-            document.getElementById('content-frame').src = "real-site.html";
-            document.cookie = "access_granted=true; max-age=" + (60 * 60 * 24 * 30) + "; path=/";
+            document.getElementById('content-frame').src = targetUrl;
+            // Save the specific URL to the cookie instead of just "true"
+            document.cookie = "access_granted=" + targetUrl + "; max-age=" + (60 * 60 * 24 * 30) + "; path=/";
         }
 
-        if (document.cookie.split(';').some((item) => item.trim().startsWith('access_granted=true'))) {
-            unlockSite();
+        // Check if a cookie already exists to keep the site unlocked on reload
+        const cookie = document.cookie.split(';').find((item) => item.trim().startsWith('access_granted='));
+        if (cookie) {
+            let savedUrl = cookie.split('=')[1].trim();
+            // Fallback just in case the old cookie style ("true") is still in the browser
+            if (savedUrl === "true") savedUrl = "real-site.html"; 
+            unlockSite(savedUrl);
         }
 
         window.addEventListener('keydown', (e) => {
+            // Only track single character keystrokes (ignores Shift, Ctrl, etc.)
             if (e.key.length === 1) {
                 inputBuffer += e.key;
-                if (inputBuffer.length > secretCode.length) {
-                    inputBuffer = inputBuffer.substring(1);
+                
+                // Keep the buffer strictly to the length of our longest secret code
+                if (inputBuffer.length > maxBufferLength) {
+                    inputBuffer = inputBuffer.substring(inputBuffer.length - maxBufferLength);
                 }
-                if (inputBuffer === secretCode) {
-                    unlockSite();
+                
+                // Check if the current buffer ends with any of our secret codes
+                for (const code in secretCodes) {
+                    if (inputBuffer.endsWith(code)) {
+                        unlockSite(secretCodes[code]);
+                        inputBuffer = ""; // Reset buffer after a successful unlock
+                        break; 
+                    }
                 }
             }
         });
