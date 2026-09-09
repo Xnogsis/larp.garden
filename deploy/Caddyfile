@@ -1,7 +1,0 @@
-# Set DOMAIN in .env (e.g. larp.garden -> automatic HTTPS). Use "http://localhost" for local testing.
-{$DOMAIN} {
-	encode zstd gzip
-	reverse_proxy anubis:8080 {
-		header_up X-Real-Ip {remote_host}
-	}
-}
