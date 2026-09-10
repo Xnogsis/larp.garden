@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>larp.garden / help</title>
+    <style>
+        html { background: #fff; }
+        body {
+            margin: 0;
+            padding: 32px 16px 64px;
+            color: #000;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 17px;
+            line-height: 1.45;
+            max-width: 640px;
+        }
+        h1 {
+            font-size: 17px;
+            font-weight: normal;
+            margin: 0 0 40px;
+        }
+        h1 span { color: #777; }
+        h2 {
+            font-size: 17px;
+            font-weight: bold;
+            margin: 48px 0 8px;
+            padding-top: 8px;
+            border-top: 1px solid #000;
+        }
+        p { margin: 0 0 12px; }
+        a { color: #000; }
+        a:hover { background: #000; color: #fff; text-decoration: none; }
+
+        table { border-collapse: collapse; width: 100%; }
+        td {
+            vertical-align: top;
+            padding: 6px 0;
+            border-bottom: 1px dotted #999;
+        }
+        td:first-child { width: 7.5em; white-space: nowrap; }
+        td:last-child { color: #555; }
+        code, kbd {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 15px;
+        }
+        kbd {
+            border: 1px solid #000;
+            padding: 0 4px;
+        }
+        ol { padding-left: 1.4em; margin: 0 0 12px; }
+        li { margin-bottom: 6px; }
+        button {
+            font: inherit;
+            background: #fff;
+            color: #000;
+            border: 1px solid #000;
+            padding: 2px 10px;
+            cursor: pointer;
+        }
+        button:hover { background: #000; color: #fff; }
+        #forget-note { color: #555; margin-left: 8px; }
+        footer {
+            margin-top: 64px;
+            color: #555;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>larp.garden <span>/ help</span></h1>
+
+    <p>
+        This site pretends to be a broken nginx page. Type a code on the 404 screen (no text box, just start typing)
+        and the matching page opens. The code you used gets saved in a cookie so you land on the same page next time.
+    </p>
+
+    <h2>Pages</h2>
+    <table>
+        <tr><td><a href="real-site.html" data-code="seahawks">seahawks</a></td><td>The Ultimate Game Stash doc. The big one.</td></tr>
+        <tr><td><a href="antimatter.html" data-code="antimatter">antimatter</a></td><td>Antimatter Dimensions. A game about huge numbers and watching them go up.</td></tr>
+        <tr><td><a href="gn.html" data-code="gn">gn</a></td><td>gn-math games. Currently down until the gn-math developers sort things out.</td></tr>
+        <tr><td><a href="arctic.html" data-code="arctic">arctic</a></td><td>Arctic. Loads from a CDN, so it may take a second.</td></tr>
+        <tr><td><a href="GUST.html" data-code="gust">gust</a></td><td>GUST Browser.</td></tr>
+        <tr><td><a href="GUST-Patcher.html" data-code="patch">patch</a></td><td>GUST Patcher.</td></tr>
+        <tr><td><a href="help.html" data-code="help">help</a></td><td>This page.</td></tr>
+    </table>
+    <p style="margin-top:12px;color:#555">Clicking a link above saves that page as your default, same as typing its code.</p>
+
+    <h2>Going back to the 404 page</h2>
+    <p>
+        Once a code is saved, the site opens straight to that page. To get back to the plain 404 screen
+        (so you can type a different code, or so nobody looking over your shoulder sees anything), the cookie has to go.
+    </p>
+    <p>Quickest way, from here:</p>
+    <p>
+        <button type="button" id="forget">Forget my saved page</button>
+        <span id="forget-note"></span>
+    </p>
+    <p>Or clear it in Google Chrome by hand:</p>
+    <ol>
+        <li>Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Delete</kbd> (Mac: <kbd>&#8984;</kbd>+<kbd>Shift</kbd>+<kbd>Delete</kbd>). The "Delete browsing data" window opens.</li>
+        <li>Set the time range to <i>All time</i>.</li>
+        <li>Tick <i>Cookies and other site data</i>. You can untick everything else.</li>
+        <li>Click <i>Delete data</i>, then reload this site. You should see "404 Not Found" again.</li>
+    </ol>
+    <p>
+        To delete the cookie for this site only, instead of every site: click the icon left of the address bar,
+        choose <i>Cookies and site data</i>, then <i>Manage on-device site data</i>, and hit the trash can next to this domain.
+    </p>
+    <p style="color:#555">
+        Note: on a managed school or work Chromebook the clear-data screen is sometimes locked by policy. The button above still works.
+    </p>
+
+    <h2>Credits</h2>
+    <p>Built and run by <b>xnogsis</b>.</p>
+    <p style="color:#555">
+        Game pages belong to their respective authors: Antimatter Dimensions by IvarK, Arctic by sealiee11, gn-math by the gn-math team.
+    </p>
+
+    <footer>You are on the help page. Reload and type another code to leave.</footer>
+
+    <script>
+        const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
+
+        document.querySelectorAll('a[data-code]').forEach((link) => {
+            link.addEventListener('click', () => {
+                document.cookie = "access_granted=" + link.getAttribute('href') + "; max-age=" + COOKIE_MAX_AGE + "; path=/";
+            });
+        });
+
+        document.getElementById('forget').addEventListener('click', () => {
+            document.cookie = "access_granted=; max-age=0; path=/";
+            document.getElementById('forget-note').textContent = "Done. Reload and you'll get the 404 page.";
+        });
+    </script>
+</body>
+</html>
