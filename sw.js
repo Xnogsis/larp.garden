@@ -10,7 +10,19 @@ const HUBS = {
     lite3kh0:   { repos: ["3kh0/3kh0-lite"],               branch: "main" },
     // gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
     gnmath:     { repos: ["freebuisness/html", "gn-math/html"], branch: "main" },
+    // Site owner's forks of the three gn-math repos; the game pages inside still point
+    // their assets at freebuisness/gn-math, so those URLs get redirected (see REWRITE).
+    gnmirror:   { repos: ["Xnogsis/html"], branch: "main", owner: "Xnogsis" },
 };
+
+// Cross-origin URLs that a hub's pages request and that should come from that hub's
+// own copy instead. Only gn-math style hubs need this, for their assets/covers/html repos.
+const UPSTREAM_RE = /https:\/\/(?:cdn|gcore)\.jsdelivr\.net\/gh\/(?:freebuisness|gn-math)\/(assets|covers|html)@main\//g;
+function rewriteUpstream(slug, text) {
+    const owner = HUBS[slug] && HUBS[slug].owner;
+    if (!owner) return text;
+    return text.replace(UPSTREAM_RE, (_, repo) => `https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/`);
+}
 
 const MIRRORS = [
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
@@ -79,7 +91,7 @@ async function fromMirrors(slug, path) {
                     // Hub pages must keep sending a full referrer, or their root-relative
                     // links can't be routed back to the hub.
                     const body = mime === "text/html"
-                        ? (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, "")
+                        ? rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""))
                         : res.body;
                     return new Response(body, { status: 200, headers });
                 }
@@ -92,7 +104,29 @@ async function fromMirrors(slug, path) {
 
 self.addEventListener("fetch", (event) => {
     const url = new URL(event.request.url);
-    if (url.origin !== self.location.origin || event.request.method !== "GET") return;
+    if (event.request.method !== "GET") return;
+
+    // Game scripts build asset URLs at runtime too, so upstream requests from a
+    // hub with its own copy are pointed at that copy (the HTML was rewritten already).
+    if (url.origin !== self.location.origin) {
+        UPSTREAM_RE.lastIndex = 0;
+        if (!UPSTREAM_RE.test(url.href)) return;
+        event.respondWith((async () => {
+            const slug = await hubFromClient(event);
+            const target = slug ? rewriteUpstream(slug, url.href) : url.href;
+            if (target === url.href) return fetch(event.request);
+            const req = event.request;
+            const init = req.mode === "navigate"
+                ? {}
+                : { mode: req.mode, credentials: req.credentials, headers: req.headers, redirect: req.redirect };
+            try {
+                const res = await fetch(target, init);
+                if (res.ok || res.type === "opaque") return res;
+            } catch (_) { /* fall back to the original */ }
+            return fetch(req);
+        })());
+        return;
+    }
 
     const direct = parseHubPath(url.pathname);
     if (direct) {
