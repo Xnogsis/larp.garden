@@ -32,14 +32,47 @@
         a { color: #000; }
         a:hover { background: #000; color: #fff; text-decoration: none; }
 
-        table { border-collapse: collapse; width: 100%; }
-        td {
-            vertical-align: top;
-            padding: 6px 0;
-            border-bottom: 1px dotted #999;
+        #garfield {
+            margin: 0 0 40px;
+            border: 1px solid #000;
+            padding: 8px;
         }
-        td:first-child { width: 7.5em; white-space: nowrap; }
-        td:last-child { color: #555; }
+        #garfield img {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #eee;
+        }
+        #garfield-caption {
+            margin: 6px 0 0;
+            color: #555;
+            font-size: 15px;
+        }
+        #garfield.failed { padding: 8px 12px; color: #555; }
+
+        .page-list { margin: 0; padding: 0; list-style: none; }
+        .page-link {
+            display: block;
+            padding: 14px 16px;
+            margin: 0 0 8px;
+            border: 2px solid #000;
+            color: #000;
+            text-decoration: none;
+        }
+        .page-link:hover, .page-link:focus { background: #000; color: #fff; outline: none; }
+        .page-link b {
+            display: block;
+            font-size: 26px;
+            line-height: 1.1;
+        }
+        .page-link small {
+            display: block;
+            margin-top: 4px;
+            font-size: 15px;
+            color: #555;
+        }
+        .page-link:hover small, .page-link:focus small { color: #ccc; }
+        .page-link .arrow { float: right; font-size: 26px; }
         code, kbd {
             font-family: "Courier New", Courier, monospace;
             font-size: 15px;
@@ -71,23 +104,27 @@
 
     <h1>larp.garden <span>/ help</span></h1>
 
+    <div id="garfield">
+        <a id="garfield-link" href="https://www.gocomics.com/garfield" target="_blank" rel="noopener"><img id="garfield-img" alt="Today's Garfield strip"></a>
+        <p id="garfield-caption">Loading today's Garfield...</p>
+    </div>
+
     <p>
-        This site pretends to be a broken nginx page. Type a code on the 404 screen (no text box, just start typing)
-        and the matching page opens. The code you used gets saved in a cookie so you land on the same page next time.
+        This site pretends to be a broken nginx page. Press any key on the 404 screen and you get here.
+        Pick a page below and it gets saved in a cookie, so next time you land on it straight away.
     </p>
 
-    <h2>Pages</h2>
-    <table>
-        <tr><td><a href="antimatter.html" data-code="antimatter">antimatter</a></td><td>Antimatter Dimensions. A game about huge numbers and watching them go up.</td></tr>
-        <tr><td><a href="arctic.html" data-code="arctic">arctic</a></td><td>Arctic. Loads from a CDN, so it may take a second.</td></tr>
-        <tr><td><a href="help.html" data-code="help">help</a></td><td>This page.</td></tr>
-    </table>
-    <p style="margin-top:12px;color:#555">Clicking a link above saves that page as your default, same as typing its code.</p>
+    <h2>Pick a page</h2>
+    <ul class="page-list">
+        <li><a class="page-link" href="antimatter.html"><span class="arrow">&rarr;</span><b>Antimatter Dimensions</b><small>A game about huge numbers and watching them go up.</small></a></li>
+        <li><a class="page-link" href="arctic.html"><span class="arrow">&rarr;</span><b>Arctic</b><small>Loads from a CDN, so it may take a second.</small></a></li>
+    </ul>
+    <p style="margin-top:12px;color:#555">Clicking one of these saves it as your default page. Come back here with the button below.</p>
 
     <h2>Going back to the 404 page</h2>
     <p>
-        Once a code is saved, the site opens straight to that page. To get back to the plain 404 screen
-        (so you can type a different code, or so nobody looking over your shoulder sees anything), the cookie has to go.
+        Once a page is saved, the site opens straight to it. To get back to the plain 404 screen
+        (so you can pick a different page, or so nobody looking over your shoulder sees anything), the cookie has to go.
     </p>
     <p>Quickest way, from here:</p>
     <p>
@@ -115,12 +152,27 @@
         Game pages belong to their respective authors: Antimatter Dimensions by IvarK, Arctic by sealiee11.
     </p>
 
-    <footer>You are on the help page. To leave, hit "Forget my saved page" above, reload, and type another code.</footer>
+    <footer>You are on the help page. To leave, pick a page above, or hit "Forget my saved page", reload, and press any key.</footer>
 
     <script>
         const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 
-        document.querySelectorAll('a[data-code]').forEach((link) => {
+        const garfieldBox = document.getElementById('garfield');
+        fetch('garfield.json', { cache: 'no-cache' })
+            .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+            .then((strip) => {
+                const img = document.getElementById('garfield-img');
+                img.src = strip.image;
+                img.onerror = () => { garfieldBox.className = 'failed'; garfieldBox.textContent = 'Garfield for ' + strip.date + ' would not load. GoComics is probably blocked here.'; };
+                document.getElementById('garfield-link').href = strip.url;
+                document.getElementById('garfield-caption').textContent = 'Garfield for ' + strip.date + '. Updates once a day.';
+            })
+            .catch(() => {
+                garfieldBox.className = 'failed';
+                garfieldBox.textContent = 'No Garfield today. The daily fetch did not run, or garfield.json is missing.';
+            });
+
+        document.querySelectorAll('a.page-link').forEach((link) => {
             link.addEventListener('click', () => {
                 document.cookie = "access_granted=" + link.getAttribute('href') + "; max-age=" + COOKIE_MAX_AGE + "; path=/";
             });
