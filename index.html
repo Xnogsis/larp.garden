@@ -70,6 +70,8 @@
             document.cookie = "access_granted=" + targetUrl + "; max-age=" + (60 * 60 * 24 * 30) + "; path=/";
         }
 
+        if (location.search || location.hash) history.replaceState(null, "", location.pathname);
+
         const cookie = document.cookie.split(';').find((item) => item.trim().startsWith('access_granted='));
         if (cookie) {
             const savedUrl = cookie.split('=')[1].trim();

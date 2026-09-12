@@ -76,26 +76,50 @@ function mimeFor(path) {
     return MIME[ext] || null;
 }
 
+// Hub pages are only meant to live inside this site's iframe; opened as the top
+// window they would show the hub path in the address bar, so bounce to the 404
+// page (the saved cookie reopens the hub properly from there).
+const UNFRAME_QUERY = "?unframed";
+const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '")</script>';
+
+// Wait this long for a mirror to answer with headers before moving on to the next.
+const MIRROR_TIMEOUT_MS = 8000;
+
+function fetchWithTimeout(url, init) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), MIRROR_TIMEOUT_MS);
+    return fetch(url, { ...init, signal: ctl.signal }).finally(() => clearTimeout(timer));
+}
+
 async function fromMirrors(slug, path) {
-    const { repos, branch } = HUBS[slug];
+    const { repos, branch, owner } = HUBS[slug];
+    // The owner's own forks change when they sync them; do not pin those for a day.
+    const cache = owner ? "default" : "force-cache";
     let lastStatus = 502;
     for (const repo of repos) {
         for (const build of MIRRORS) {
             try {
-                const res = await fetch(build(repo, branch, path), { cache: "force-cache" });
+                const res = await fetchWithTimeout(build(repo, branch, path), { cache });
                 if (res.ok) {
                     const headers = new Headers();
                     const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
                     headers.set("Content-Type", mime);
-                    headers.set("Cache-Control", "public, max-age=86400");
-                    // Hub pages must keep sending a full referrer, or their root-relative
-                    // links can't be routed back to the hub.
-                    const body = mime === "text/html"
-                        ? rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""))
-                        : res.body;
+                    headers.set("Cache-Control", owner ? "public, max-age=3600" : "public, max-age=86400");
+                    let body = res.body;
+                    if (mime === "text/html") {
+                        // Hub pages must keep sending a full referrer, or their root-relative
+                        // links can't be routed back to the hub.
+                        body = rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""));
+                        body = /<head[^>]*>/i.test(body)
+                            ? body.replace(/<head[^>]*>/i, (tag) => tag + STAY_FRAMED)
+                            : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + STAY_FRAMED);
+                    }
                     return new Response(body, { status: 200, headers });
                 }
                 lastStatus = res.status;
+                // A clean 404 means the file is not in this repo at all; the other mirrors
+                // of the same repo will say the same, so go straight to the next repo.
+                if (res.status === 404) break;
             } catch (_) { /* try next mirror */ }
         }
     }
@@ -135,6 +159,8 @@ self.addEventListener("fetch", (event) => {
     }
 
     if (url.pathname === "/sw.js") return;
+    // The bounce out of a top-level hub page carries a hub referrer; it must reach the real 404 page.
+    if (event.request.mode === "navigate" && url.search === UNFRAME_QUERY) return;
 
     event.respondWith((async () => {
         const slug = await hubFromClient(event);
