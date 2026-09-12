@@ -147,7 +147,15 @@
         <button type="button" id="forget">Forget my saved page</button>
         <span id="forget-note"></span>
     </p>
-    <p>Or clear it in Google Chrome by hand:</p>
+    <p>
+        If a hub gets stuck loading or shows an old version after its files changed, this throws away everything the
+        game loader has cached (saved games are kept):
+    </p>
+    <p>
+        <button type="button" id="reset-loader">Reset game loader</button>
+        <span id="reset-note"></span>
+    </p>
+    <p>Or clear the cookie in Google Chrome by hand:</p>
     <ol>
         <li>Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Delete</kbd> (Mac: <kbd>&#8984;</kbd>+<kbd>Shift</kbd>+<kbd>Delete</kbd>). The "Delete browsing data" window opens.</li>
         <li>Set the time range to <i>All time</i>.</li>
@@ -159,14 +167,14 @@
         choose <i>Cookies and site data</i>, then <i>Manage on-device site data</i>, and hit the trash can next to this domain.
     </p>
     <p style="color:#555">
-        Note: on a managed school or work Laptop the clear-data screen is sometimes locked by policy. The button above still works.
+        Note: on a managed school or work Laptop the clear-data screen is sometimes locked by policy. The buttons above still work.
     </p>
 
     <h2>Credits</h2>
     <p>Built and run by <b>xnogsis</b>.</p>
     <p style="color:#555">
         Game pages belong to their respective authors: Antimatter Dimensions by IvarK, Arctic by sealiee11.
-        Hubs: gn-math (gn-math / freebuisness), DuckMath by Neruvy, Project-HUB by IamChristianS, DotGUI by DotLYHiyou,
+        Hubs: gn-math (gn-math / freebuisness, mirrored under Xnogsis), DuckMath by Neruvy, Project-HUB by IamChristianS, DotGUI by DotLYHiyou,
         Cherri by x8rr, 3kh0 lite by 3kh0, Umbrion by EclipsarGames. Nothing from them is hosted here; it is fetched from their public repos.
     </p>
 
@@ -194,6 +202,22 @@
             link.addEventListener('click', () => {
                 document.cookie = "access_granted=" + link.getAttribute('href') + "; max-age=" + COOKIE_MAX_AGE + "; path=/";
             });
+        });
+
+        document.getElementById('reset-loader').addEventListener('click', async () => {
+            const note = document.getElementById('reset-note');
+            note.textContent = "Resetting...";
+            try {
+                if ('serviceWorker' in navigator) {
+                    for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
+                }
+                if ('caches' in window) {
+                    for (const k of await caches.keys()) await caches.delete(k);
+                }
+                note.textContent = "Done. Open a hub again and it will load fresh.";
+            } catch (e) {
+                note.textContent = "Could not reset: " + e.message;
+            }
         });
 
         document.getElementById('forget').addEventListener('click', () => {
