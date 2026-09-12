@@ -56,16 +56,8 @@
     <iframe id="content-frame" src="about:blank"></iframe>
 
     <script>
-        const secretCodes = {
-            "antimatter": "antimatter.html",
-			"arctic": "arctic.html",
-			"help": "help.html"
-        };
-
-        const validTargets = Object.values(secretCodes);
-        
-        let inputBuffer = "";
-        const maxBufferLength = Math.max(...Object.keys(secretCodes).map(code => code.length));
+        const helpPage = "help.html";
+        const validTargets = ["antimatter.html", "arctic.html", helpPage];
 
         function unlockSite(targetUrl) {
             document.body.classList.add('unlocked');
@@ -85,21 +77,9 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            if (e.key.length === 1) {
-                inputBuffer += e.key;
-                
-                if (inputBuffer.length > maxBufferLength) {
-                    inputBuffer = inputBuffer.substring(inputBuffer.length - maxBufferLength);
-                }
-                
-                for (const code in secretCodes) {
-                    if (inputBuffer.endsWith(code)) {
-                        unlockSite(secretCodes[code]);
-                        inputBuffer = ""; 
-                        break; 
-                    }
-                }
-            }
+            if (document.body.classList.contains('unlocked')) return;
+            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            unlockSite(helpPage);
         });
     </script>
 </body>
