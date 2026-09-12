@@ -56,9 +56,9 @@
     <iframe id="content-frame" src="about:blank"></iframe>
 
     <script>
-        const helpPage = "help.html";
+        const homePage = "home.html";
         const validTargets = [
-            "antimatter.html", "arctic.html", helpPage,
+            "antimatter.html", "arctic.html", homePage,
             "gnmath.html", "gnmirror.html", "umbrion.html", "dotgui.html", "projecthub.html",
             "cherri.html", "duckmath.html", "lite3kh0.html",
         ];
@@ -74,7 +74,8 @@
 
         const cookie = document.cookie.split(';').find((item) => item.trim().startsWith('access_granted='));
         if (cookie) {
-            const savedUrl = cookie.split('=')[1].trim();
+            let savedUrl = cookie.split('=')[1].trim();
+            if (savedUrl === "help.html") savedUrl = homePage; // cookies from before the rename
             if (validTargets.includes(savedUrl)) {
                 unlockSite(savedUrl);
             } else {
@@ -85,7 +86,7 @@
         window.addEventListener('keydown', (e) => {
             if (document.body.classList.contains('unlocked')) return;
             if (e.ctrlKey || e.metaKey || e.altKey) return;
-            unlockSite(helpPage);
+            unlockSite(homePage);
         });
     </script>
 </body>
