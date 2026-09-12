@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gn-math</title>
+    <title>gn-math mirror</title>
     <link rel="stylesheet" href="gnmath.css">
 </head>
 <body>
-    <h1>gn-math <span>/ mirrored catalog</span></h1>
+    <h1>gn-math mirror <span>/ our own copy on jsDelivr</span></h1>
     <div id="bar">
         <input id="search" type="search" placeholder="Search games" autocomplete="off">
         <span id="count"></span>
@@ -16,8 +16,8 @@
     <p id="status">Loading the game list...</p>
     <ul id="grid"></ul>
     <footer>
-        Games and covers are pulled from gn-math's public GitHub repos (and a mirror of them), not hosted here.
-        Each game belongs to the author shown on its page.
+        Same catalog as gn-math, but games, assets and covers come from this site owner's forks
+        (Xnogsis/html, Xnogsis/assets, Xnogsis/covers) through jsDelivr. Each game belongs to the author shown on its page.
     </footer>
 
     <div id="viewer">
@@ -30,13 +30,12 @@
         <iframe id="frame" allow="fullscreen; autoplay; gamepad"></iframe>
     </div>
 
-    <!-- gn-math's own org is blocked on jsDelivr; the freebuisness fork tracks it and is not.
-         sw.js uses the same repos for the game files themselves (hub "gnmath"). -->
-    <script src="gnmath.js" data-hub="gnmath" data-title="gn-math" data-sources="
-        https://cdn.jsdelivr.net/gh/freebuisness/
-        https://raw.githubusercontent.com/gn-math/
-        https://gcore.jsdelivr.net/gh/freebuisness/
-        https://raw.githubusercontent.com/freebuisness/
+    <!-- sw.js hub "gnmirror" serves the game pages from Xnogsis/html and rewrites the
+         asset/cover URLs inside them to the Xnogsis forks too. -->
+    <script src="gnmath.js" data-hub="gnmirror" data-title="gn-math mirror" data-sources="
+        https://cdn.jsdelivr.net/gh/Xnogsis/
+        https://gcore.jsdelivr.net/gh/Xnogsis/
+        https://raw.githubusercontent.com/Xnogsis/
     "></script>
 </body>
 </html>
