@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gn-math</title>
+    <style>
+        html { background: #fff; }
+        body {
+            margin: 0;
+            padding: 24px 16px 64px;
+            color: #000;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 17px;
+            line-height: 1.45;
+        }
+        h1 { font-size: 17px; font-weight: normal; margin: 0 0 16px; }
+        h1 span { color: #777; }
+        a { color: #000; }
+        a:hover { background: #000; color: #fff; text-decoration: none; }
+        #bar { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; margin-bottom: 20px; }
+        #search {
+            font: inherit;
+            border: 2px solid #000;
+            padding: 6px 10px;
+            width: 320px;
+            max-width: 100%;
+        }
+        #search:focus { outline: none; background: #ffffe0; }
+        #count { color: #555; }
+        #status { color: #555; margin: 0 0 12px; }
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 8px;
+            margin: 0; padding: 0; list-style: none;
+        }
+        .zone {
+            display: block;
+            border: 2px solid #000;
+            padding: 0;
+            background: #fff;
+            color: #000;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+            width: 100%;
+        }
+        .zone:hover, .zone:focus { background: #000; color: #fff; outline: none; }
+        .zone img {
+            display: block;
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            background: #eee;
+            border-bottom: 2px solid #000;
+        }
+        .zone span {
+            display: block;
+            padding: 6px 8px;
+            font-size: 15px;
+            line-height: 1.2;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        #viewer { display: none; position: fixed; inset: 0; background: #fff; }
+        #viewer.open { display: flex; flex-direction: column; }
+        #viewer-bar {
+            display: flex;
+            gap: 16px;
+            align-items: baseline;
+            padding: 6px 12px;
+            border-bottom: 1px solid #000;
+            font-size: 15px;
+        }
+        #viewer-bar b { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        #viewer-bar button {
+            font: inherit;
+            background: #fff;
+            color: #000;
+            border: 1px solid #000;
+            padding: 0 10px;
+            cursor: pointer;
+        }
+        #viewer-bar button:hover { background: #000; color: #fff; }
+        #frame { flex: 1; border: 0; width: 100%; }
+        footer { margin-top: 48px; color: #555; font-size: 15px; }
+    </style>
+</head>
+<body>
+    <h1>gn-math <span>/ mirrored catalog</span></h1>
+    <div id="bar">
+        <input id="search" type="search" placeholder="Search games" autocomplete="off">
+        <span id="count"></span>
+        <a href="help.html">back to help</a>
+    </div>
+    <p id="status">Loading the game list...</p>
+    <ul id="grid"></ul>
+    <footer>
+        Games and covers are pulled from gn-math's public GitHub repos (and a mirror of them), not hosted here.
+        Each game belongs to the author shown on its page.
+    </footer>
+
+    <div id="viewer">
+        <div id="viewer-bar">
+            <button type="button" id="close">&larr; back</button>
+            <b id="viewer-title"></b>
+            <span id="viewer-author"></span>
+            <button type="button" id="fullscreen">fullscreen</button>
+        </div>
+        <iframe id="frame" allow="fullscreen; autoplay; gamepad"></iframe>
+    </div>
+
+    <script>
+        // Same content, several hosts: gn-math's own org is blocked on jsDelivr, the
+        // freebuisness fork tracks it and is not. The service worker uses the same list
+        // for the game files themselves (see sw.js, "gnmath").
+        const SOURCES = [
+            "https://cdn.jsdelivr.net/gh/freebuisness/",
+            "https://raw.githubusercontent.com/gn-math/",
+            "https://gcore.jsdelivr.net/gh/freebuisness/",
+            "https://raw.githubusercontent.com/freebuisness/",
+        ];
+        const at = (src, repo, path) => src.includes("jsdelivr") ? src + repo + "@main/" + path : src + repo + "/main/" + path;
+
+        const grid = document.getElementById("grid");
+        const status = document.getElementById("status");
+        const search = document.getElementById("search");
+        const count = document.getElementById("count");
+        const viewer = document.getElementById("viewer");
+        const frame = document.getElementById("frame");
+        let zones = [];
+
+        async function firstOk(repo, path) {
+            for (const src of SOURCES) {
+                try {
+                    const res = await fetch(at(src, repo, path), { cache: "no-cache" });
+                    if (res.ok) return res;
+                } catch (_) { /* next source */ }
+            }
+            throw new Error("all sources failed for " + repo + "/" + path);
+        }
+
+        function coverFor(zone) {
+            const file = (zone.cover || "").replace("{COVER_URL}/", "");
+            return SOURCES.map((s) => at(s, "covers", file));
+        }
+
+        function render(filter) {
+            const q = filter.trim().toLowerCase();
+            const shown = zones.filter((z) => !q || z.name.toLowerCase().includes(q));
+            grid.textContent = "";
+            for (const z of shown) {
+                const li = document.createElement("li");
+                const btn = document.createElement("button");
+                btn.className = "zone";
+                btn.type = "button";
+                const img = document.createElement("img");
+                img.loading = "lazy";
+                img.alt = "";
+                const covers = coverFor(z);
+                let i = 0;
+                img.src = covers[i];
+                img.onerror = () => { if (++i < covers.length) img.src = covers[i]; else img.onerror = null; };
+                const name = document.createElement("span");
+                name.textContent = z.name;
+                btn.append(img, name);
+                btn.addEventListener("click", () => open(z));
+                li.append(btn);
+                grid.append(li);
+            }
+            count.textContent = shown.length + " of " + zones.length;
+        }
+
+        async function open(zone) {
+            if (zone.url.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
+            document.getElementById("viewer-title").textContent = zone.name;
+            document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
+            // A few catalog entries point at renamed files; the plain "<id>.html" usually still exists.
+            let file = zone.url.replace("{HTML_URL}/", "");
+            const probe = await fetch("/hub/gnmath/" + file).catch(() => null);
+            if (!probe || !probe.ok) file = zone.id + ".html";
+            frame.src = "/hub/gnmath/" + file;
+            viewer.classList.add("open");
+            document.title = zone.name;
+            history.replaceState(null, "", "?id=" + zone.id);
+        }
+
+        document.getElementById("close").addEventListener("click", () => {
+            viewer.classList.remove("open");
+            frame.src = "about:blank";
+            document.title = "gn-math";
+            history.replaceState(null, "", location.pathname);
+        });
+        document.getElementById("fullscreen").addEventListener("click", () => frame.requestFullscreen && frame.requestFullscreen());
+        search.addEventListener("input", () => render(search.value));
+
+        const swReady = "serviceWorker" in navigator
+            ? navigator.serviceWorker.register("sw.js", { scope: "/" }).then(() => navigator.serviceWorker.ready)
+            : Promise.reject(new Error("no service worker support"));
+
+        Promise.all([firstOk("assets", "zones.json").then((r) => r.json()), swReady])
+            .then(([list]) => {
+                zones = list.filter((z) => z.id >= 0 && z.url && !z.url.startsWith("http"));
+                status.textContent = "";
+                render("");
+                const id = new URLSearchParams(location.search).get("id");
+                const z = id && zones.find((x) => String(x.id) === id);
+                if (z) open(z);
+            })
+            .catch((e) => { status.textContent = "Could not load gn-math: " + e.message; });
+    </script>
+</body>
+</html>
