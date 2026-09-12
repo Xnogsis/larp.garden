@@ -57,14 +57,12 @@
 
     <script>
         const secretCodes = {
-            "seahawks": "real-site.html",
             "antimatter": "antimatter.html",
-            "gn": "gn.html",
 			"arctic": "arctic.html",
-			"gust": "GUST.html",
-			"patch": "GUST-Patcher.html",
 			"help": "help.html"
         };
+
+        const validTargets = Object.values(secretCodes);
         
         let inputBuffer = "";
         const maxBufferLength = Math.max(...Object.keys(secretCodes).map(code => code.length));
@@ -78,9 +76,12 @@
 
         const cookie = document.cookie.split(';').find((item) => item.trim().startsWith('access_granted='));
         if (cookie) {
-            let savedUrl = cookie.split('=')[1].trim();
-            if (savedUrl === "true") savedUrl = "real-site.html"; 
-            unlockSite(savedUrl);
+            const savedUrl = cookie.split('=')[1].trim();
+            if (validTargets.includes(savedUrl)) {
+                unlockSite(savedUrl);
+            } else {
+                document.cookie = "access_granted=; max-age=0; path=/";
+            }
         }
 
         window.addEventListener('keydown', (e) => {
