@@ -21,26 +21,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Look up today's strip on GoComics
-        id: strip
+      - name: Install a browser for the bot-shield fallback
         run: |
-          set -euo pipefail
-          date_slug=$(TZ=America/New_York date +%Y/%m/%d)
-          date_iso=$(TZ=America/New_York date +%Y-%m-%d)
-          page="https://www.gocomics.com/garfield/${date_slug}"
-          html=$(curl -sSL --max-time 60 "$page" \
-            -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36" \
-            -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" \
-            -H "Accept-Language: en-US,en;q=0.9" \
-            -H "Sec-Fetch-Mode: navigate" -H "Sec-Fetch-Dest: document" -H "Sec-Fetch-Site: none" \
-            -H "Upgrade-Insecure-Requests: 1")
-          image=$(printf '%s' "$html" | grep -oE 'property="og:image" content="[^"]+"' | head -1 | sed -E 's/.*content="([^"]+)"/\1/')
-          case "$image" in
-            https://featureassets.gocomics.com/assets/*) ;;
-            *) echo "Could not find the strip image on $page (got: '$image')"; exit 1 ;;
-          esac
-          printf '{\n  "date": "%s",\n  "image": "%s",\n  "url": "%s"\n}\n' "$date_iso" "$image" "$page" > garfield.json
-          cat garfield.json
+          pip install --quiet playwright==1.62.0
+          python -m playwright install --with-deps chromium
+
+      - name: Look up today's strip on GoComics
+        run: xvfb-run --auto-servernum python .github/scripts/garfield.py
 
       - name: Commit if changed
         id: commit
