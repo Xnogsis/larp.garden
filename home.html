@@ -198,6 +198,11 @@
                 garfieldBox.textContent = 'No Garfield today. The daily fetch did not run, or garfield.json is missing.';
             });
 
+        // Arriving here from a hub's "back to home" link: make refresh land on home, not the hub.
+        if (top !== self && document.cookie.includes('access_granted=')) {
+            document.cookie = "access_granted=home.html; max-age=" + COOKIE_MAX_AGE + "; path=/";
+        }
+
         document.querySelectorAll('a.page-link').forEach((link) => {
             link.addEventListener('click', () => {
                 document.cookie = "access_granted=" + link.getAttribute('href') + "; max-age=" + COOKIE_MAX_AGE + "; path=/";
