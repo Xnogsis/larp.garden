@@ -8,6 +8,7 @@ const HUBS = {
     cherri:     { repos: ["x8rr/cherri"],                  branch: "main" },
     duckmath:   { repos: ["Neruvy/duckmath"],              branch: "main" },
     lite3kh0:   { repos: ["3kh0/3kh0-lite"],               branch: "main" },
+    cmx:        { repos: ["hackz00/classroommaxxing"],     branch: "main" },
     // gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
     gnmath:     { repos: ["freebuisness/html", "gn-math/html"], branch: "main" },
     // Site owner's forks of the three gn-math repos; the game pages inside still point
