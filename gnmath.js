@@ -79,7 +79,9 @@ search.addEventListener("input", () => render(search.value));
 
 const swReady = "serviceWorker" in navigator
     ? navigator.serviceWorker.register("sw.js", { scope: "/" }).then(() => navigator.serviceWorker.ready)
-    : Promise.reject(new Error("no service worker support"));
+    : Promise.reject(new Error(location.protocol === "http:"
+        ? "service workers need https; open https://" + location.host + " instead"
+        : "no service worker support"));
 
 Promise.all([firstOk("assets", "zones.json").then((r) => r.json()), swReady])
     .then(([list]) => {

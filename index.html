@@ -56,6 +56,11 @@
     <iframe id="content-frame" src="about:blank"></iframe>
 
     <script>
+        // The hub loaders need service workers, which only exist on https.
+        if (location.protocol === "http:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
+            location.replace("https://" + location.host + location.pathname + location.search + location.hash);
+        }
+
         const homePage = "home.html";
         const validTargets = [
             "antimatter.html", "arctic.html", homePage,
