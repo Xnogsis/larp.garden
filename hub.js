@@ -22,7 +22,9 @@
     };
 
     if (!("serviceWorker" in navigator)) {
-        fail("This browser does not allow service workers, which the loader needs.");
+        fail(location.protocol === "http:"
+            ? "Service workers need https; open https://" + location.host + " instead."
+            : "This browser does not allow service workers, which the loader needs.");
         return;
     }
 
