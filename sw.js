@@ -167,9 +167,12 @@ self.addEventListener("fetch", (event) => {
     event.respondWith((async () => {
         const slug = await hubFromClient(event);
         if (!slug) return fetch(event.request);
+        // A "../" from a hub's root page climbs out to "/hub/x"; on the real site the
+        // browser would have clamped it at the root, so drop the stray "hub" segment.
+        const path = url.pathname.replace(/^\/(hub\/)?/, "");
         if (event.request.mode === "navigate") {
-            return Response.redirect("/hub/" + slug + url.pathname + url.search + url.hash, 302);
+            return Response.redirect("/hub/" + slug + "/" + path + url.search + url.hash, 302);
         }
-        return fromMirrors(slug, url.pathname.replace(/^\//, ""));
+        return fromMirrors(slug, path);
     })());
 });
