@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gn-math via esm.sh</title>
     <link rel="stylesheet" href="gnmath.css">
+    <script>if (localStorage.theme === "dark") document.documentElement.classList.add("dark");</script>
 </head>
 <body>
     <h1>gn-math via esm.sh <span>/ for networks that block jsDelivr</span></h1>
@@ -25,8 +26,12 @@
             <button type="button" id="close">&larr; back</button>
             <b id="viewer-title"></b>
             <span id="viewer-author"></span>
+            <button type="button" id="newtab">new tab</button>
+            <button type="button" id="blank">about:blank</button>
+            <button type="button" id="hidebar">hide bar</button>
             <button type="button" id="fullscreen">fullscreen</button>
         </div>
+        <button type="button" id="showbar" title="show bar">&#9662;</button>
         <iframe id="frame" allow="fullscreen; autoplay; gamepad"></iframe>
     </div>
 

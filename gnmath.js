@@ -81,6 +81,17 @@ document.getElementById("close").addEventListener("click", () => {
     history.replaceState(null, "", location.pathname);
 });
 document.getElementById("fullscreen").addEventListener("click", () => frame.requestFullscreen && frame.requestFullscreen());
+document.getElementById("newtab").addEventListener("click", () => window.open(frame.src, "_blank"));
+document.getElementById("hidebar").addEventListener("click", () => viewer.classList.add("nobar"));
+document.getElementById("showbar").addEventListener("click", () => viewer.classList.remove("nobar"));
+// The new tab has our origin, so sw.js still serves the iframe; only the address bar shows about:blank.
+document.getElementById("blank").addEventListener("click", () => {
+    const w = window.open("about:blank");
+    if (!w) return;
+    w.document.write('<title>' + document.title + '</title><style>body{margin:0}iframe{border:0;width:100vw;height:100vh}</style>'
+        + '<iframe src="' + frame.src + '" allow="fullscreen; autoplay; gamepad"></iframe>');
+    w.document.close();
+});
 search.addEventListener("input", () => render(search.value));
 
 const swReady = "serviceWorker" in navigator
