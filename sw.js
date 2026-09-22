@@ -15,7 +15,18 @@ const HUBS = {
     // Site owner's forks of the three gn-math repos; the game pages inside still point
     // their assets at freebuisness/gn-math, so those URLs get redirected (see REWRITE).
     gnmirror:   { repos: ["Xnogsis/html"], branch: "main", owner: "Xnogsis" },
+    // Same repos as gnmath but everything goes through esm.sh, including the jsDelivr
+    // URLs the game pages request themselves, for networks that block jsDelivr.
+    gnesm:      { repos: ["freebuisness/html", "gn-math/html"], branch: "main", esm: true },
 };
+
+// Any GitHub file on a jsDelivr edge; esm.sh serves the same "repo@ref/path" layout.
+// "?raw" stops esm.sh from turning .js files into ES modules.
+const JSDELIVR_RE = /^https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/gh\/([^?#]+)(\?[^#]*)?/;
+function viaEsm(href) {
+    const m = JSDELIVR_RE.exec(href);
+    return m ? "https://esm.sh/gh/" + m[1] + (m[2] ? m[2] + "&raw" : "?raw") : href;
+}
 
 // Cross-origin URLs that a hub's pages request and that should come from that hub's
 // own copy instead. Only gn-math style hubs need this, for their assets/covers/html repos.
@@ -26,6 +37,7 @@ function rewriteUpstream(slug, text) {
     return text.replace(UPSTREAM_RE, (_, repo) => `https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/`);
 }
 
+const ESM_MIRROR = (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`);
 const MIRRORS = [
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://gcore.jsdelivr.net/gh/${r}@${b}/${p}`,
@@ -96,12 +108,13 @@ function fetchWithTimeout(url, init) {
 }
 
 async function fromMirrors(slug, path) {
-    const { repos, branch, owner } = HUBS[slug];
+    const { repos, branch, owner, esm } = HUBS[slug];
     // The owner's own forks change when they sync them; do not pin those for a day.
     const cache = owner ? "default" : "force-cache";
+    const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
     let lastStatus = 502;
     for (const repo of repos) {
-        for (const build of MIRRORS) {
+        for (const build of mirrors) {
             try {
                 const res = await fetchWithTimeout(build(repo, branch, path), { cache });
                 if (res.ok) {
@@ -137,11 +150,11 @@ self.addEventListener("fetch", (event) => {
     // Game scripts build asset URLs at runtime too, so upstream requests from a
     // hub with its own copy are pointed at that copy (the HTML was rewritten already).
     if (url.origin !== self.location.origin) {
-        UPSTREAM_RE.lastIndex = 0;
-        if (!UPSTREAM_RE.test(url.href)) return;
+        if (!JSDELIVR_RE.test(url.href)) return;
         event.respondWith((async () => {
             const slug = await hubFromClient(event);
-            const target = slug ? rewriteUpstream(slug, url.href) : url.href;
+            let target = slug ? rewriteUpstream(slug, url.href) : url.href;
+            if (slug && HUBS[slug].esm) target = viaEsm(target);
             if (target === url.href) return fetch(event.request);
             const req = event.request;
             const init = req.mode === "navigate"
