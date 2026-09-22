@@ -1,9 +1,15 @@
+@font-face {
+    font-family: Inter;
+    src: url(fonts/InterVariable.woff2) format("woff2");
+    font-weight: 100 900;
+    font-display: swap;
+}
 html { background: #fff; }
 body {
     margin: 0;
     padding: 24px 16px 64px;
     color: #000;
-    font-family: "Times New Roman", Times, serif;
+    font-family: Inter, system-ui, sans-serif;
     font-size: 17px;
     line-height: 1.45;
 }
