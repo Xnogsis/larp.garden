@@ -99,8 +99,13 @@ const swReady = "serviceWorker" in navigator
         // sw.js skipWaiting()s and claims clients, so an update still installing when the
         // page loads becomes the controller shortly; hold off until it does or an old
         // worker would answer /hub/ paths it doesn't know about.
-        if (!(reg.installing || reg.waiting)) return navigator.serviceWorker.ready;
-        return new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+        const next = reg.installing || reg.waiting;
+        if (!next) return navigator.serviceWorker.ready;
+        return new Promise((r) => {
+            navigator.serviceWorker.addEventListener("controllerchange", r, { once: true });
+            // A failed update never fires controllerchange; carry on with whatever worker is active.
+            next.addEventListener("statechange", () => { if (next.state === "redundant") r(navigator.serviceWorker.ready); });
+        });
     })
     : Promise.reject(new Error(location.protocol === "http:"
         ? "service workers need https; open https://" + location.host + " instead"
