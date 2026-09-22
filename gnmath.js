@@ -84,7 +84,13 @@ document.getElementById("fullscreen").addEventListener("click", () => frame.requ
 search.addEventListener("input", () => render(search.value));
 
 const swReady = "serviceWorker" in navigator
-    ? navigator.serviceWorker.register("sw.js", { scope: "/" }).then(() => navigator.serviceWorker.ready)
+    ? navigator.serviceWorker.register("sw.js", { scope: "/" }).then((reg) => {
+        // sw.js skipWaiting()s and claims clients, so an update still installing when the
+        // page loads becomes the controller shortly; hold off until it does or an old
+        // worker would answer /hub/ paths it doesn't know about.
+        if (!(reg.installing || reg.waiting)) return navigator.serviceWorker.ready;
+        return new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+    })
     : Promise.reject(new Error(location.protocol === "http:"
         ? "service workers need https; open https://" + location.host + " instead"
         : "no service worker support"));

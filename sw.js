@@ -20,12 +20,14 @@ const HUBS = {
     gnesm:      { repos: ["freebuisness/html", "gn-math/html"], branch: "main", esm: true },
 };
 
-// Any GitHub file on a jsDelivr edge; esm.sh serves the same "repo@ref/path" layout.
-// "?raw" stops esm.sh from turning .js files into ES modules.
-const JSDELIVR_RE = /^https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/gh\/([^?#]+)(\?[^#]*)?/;
+// Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
+// under /gh/ with the same "repo@ref/path" layout and npm files at the root as
+// "pkg@ver/path". "?raw" stops esm.sh from turning .js files into ES modules.
+const JSDELIVR_RE = /^https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/(gh|npm)\/([^?#]+)(\?[^#]*)?/;
 function viaEsm(href) {
     const m = JSDELIVR_RE.exec(href);
-    return m ? "https://esm.sh/gh/" + m[1] + (m[2] ? m[2] + "&raw" : "?raw") : href;
+    if (!m) return href;
+    return "https://esm.sh/" + (m[1] === "gh" ? "gh/" : "") + m[2] + (m[3] ? m[3] + "&raw" : "?raw");
 }
 
 // Cross-origin URLs that a hub's pages request and that should come from that hub's
