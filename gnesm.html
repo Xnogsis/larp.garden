@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>gn-math via esm.sh</title>
+    <link rel="stylesheet" href="gnmath.css">
+</head>
+<body>
+    <h1>gn-math via esm.sh <span>/ for networks that block jsDelivr</span></h1>
+    <div id="bar">
+        <input id="search" type="search" placeholder="Search games" autocomplete="off">
+        <span id="count"></span>
+        <a href="home.html">back to home</a>
+    </div>
+    <p id="status">Loading the game list...</p>
+    <ul id="grid"></ul>
+    <footer>
+        Same catalog as gn-math, but everything is fetched through esm.sh instead of jsDelivr.
+        Each game belongs to the author shown on its page.
+    </footer>
+
+    <div id="viewer">
+        <div id="viewer-bar">
+            <button type="button" id="close">&larr; back</button>
+            <b id="viewer-title"></b>
+            <span id="viewer-author"></span>
+            <button type="button" id="fullscreen">fullscreen</button>
+        </div>
+        <iframe id="frame" allow="fullscreen; autoplay; gamepad"></iframe>
+    </div>
+
+    <!-- sw.js hub "gnesm" serves the game pages through esm.sh and redirects every
+         jsDelivr request the games make to esm.sh as well. -->
+    <script src="gnmath.js" data-hub="gnesm" data-title="gn-math via esm.sh" data-sources="
+        https://esm.sh/gh/freebuisness/
+        https://esm.sh/gh/gn-math/
+    "></script>
+</body>
+</html>

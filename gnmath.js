@@ -3,7 +3,10 @@
 const HUB = document.currentScript.dataset.hub;
 const TITLE = document.currentScript.dataset.title || HUB;
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
-const at = (src, repo, path) => src.includes("jsdelivr") ? src + repo + "@main/" + path : src + repo + "/main/" + path;
+// jsDelivr and esm.sh use "repo@ref/path", raw.githubusercontent uses "repo/ref/path".
+// esm.sh rewrites .js files into ES modules unless asked for the raw file.
+const at = (src, repo, path) => src.includes("raw.githubusercontent") ? src + repo + "/main/" + path
+    : src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
 
 const grid = document.getElementById("grid");
 const status = document.getElementById("status");
