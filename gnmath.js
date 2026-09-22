@@ -16,10 +16,13 @@ let zones = [];
 async function firstOk(repo, path) {
     for (const src of SOURCES) {
         try {
-            const res = await fetch(at(src, repo, path), { cache: "no-cache" });
+            const res = await fetch(at(src, repo, path), { cache: "no-cache", referrerPolicy: "no-referrer" });
             if (res.ok) return res;
         } catch (_) { /* next source */ }
     }
+    // Same-origin copy committed to this repo, for networks that drop cross-site CDN requests.
+    const local = await fetch(path).catch(() => null);
+    if (local && local.ok) return local;
     throw new Error("all sources failed for " + repo + "/" + path);
 }
 
