@@ -78,4 +78,16 @@ a:hover { background: #000; color: #fff; text-decoration: none; }
 }
 #viewer-bar button:hover { background: #000; color: #fff; }
 #frame { flex: 1; border: 0; width: 100%; }
+#showbar { display: none; position: fixed; top: 0; right: 0; padding: 0 6px; font: inherit; background: #fff; color: #000; border: 1px solid #000; border-width: 0 0 1px 1px; cursor: pointer; opacity: .4; }
+#showbar:hover { opacity: 1; }
+#viewer.nobar #viewer-bar { display: none; }
+#viewer.nobar #showbar { display: block; }
 footer { margin-top: 48px; color: #555; font-size: 15px; }
+
+html.dark, html.dark #viewer, html.dark #showbar { background: #111; }
+html.dark body, html.dark a, html.dark #search, html.dark .zone, html.dark #viewer-bar button, html.dark #showbar { color: #eee; border-color: #eee; }
+html.dark #search, html.dark .zone, html.dark #viewer-bar button { background: #111; }
+html.dark #search:focus { background: #222; }
+html.dark a:hover, html.dark .zone:hover, html.dark .zone:focus, html.dark #viewer-bar button:hover { background: #eee; color: #111; }
+html.dark #viewer-bar, html.dark .zone img { border-color: #eee; }
+html.dark .zone img { background: #333; }
