@@ -29,6 +29,8 @@ function rewriteUpstream(slug, text) {
 const MIRRORS = [
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://gcore.jsdelivr.net/gh/${r}@${b}/${p}`,
+    (r, b, p) => `https://fastly.jsdelivr.net/gh/${r}@${b}/${p}`,
+    (r, b, p) => `https://testingcf.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://raw.githubusercontent.com/${r}/${b}/${p}`,
     (r, b, p) => `https://cdn.statically.io/gh/${r}/${b}/${p}`,
 ];
@@ -90,7 +92,7 @@ const MIRROR_TIMEOUT_MS = 8000;
 function fetchWithTimeout(url, init) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), MIRROR_TIMEOUT_MS);
-    return fetch(url, { ...init, signal: ctl.signal }).finally(() => clearTimeout(timer));
+    return fetch(url, { ...init, referrerPolicy: "no-referrer", signal: ctl.signal }).finally(() => clearTimeout(timer));
 }
 
 async function fromMirrors(slug, path) {
