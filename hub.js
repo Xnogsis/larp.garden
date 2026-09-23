@@ -4,6 +4,7 @@
     document.title = name;
 
     const frame = document.createElement("iframe");
+    frame.title = name;
     frame.allow = "fullscreen; autoplay; gamepad";
     frame.style.cssText = "position:fixed;inset:0;width:100%;height:100%;border:0";
     // A hub link the service worker couldn't attribute (no referrer) lands on this

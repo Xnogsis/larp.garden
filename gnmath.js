@@ -69,6 +69,7 @@ async function open(zone) {
     const probe = await fetch("/hub/" + HUB + "/" + file).catch(() => null);
     if (!probe || !probe.ok) file = zone.id + ".html";
     frame.src = "/hub/" + HUB + "/" + file;
+    frame.title = zone.name;
     viewer.classList.add("open");
     document.title = zone.name;
     history.replaceState(null, "", "?id=" + zone.id);
@@ -88,9 +89,13 @@ document.getElementById("showbar").addEventListener("click", () => viewer.classL
 document.getElementById("blank").addEventListener("click", () => {
     const w = window.open("about:blank");
     if (!w) return;
-    w.document.write('<title>' + document.title + '</title><style>body{margin:0}iframe{border:0;width:100vw;height:100vh}</style>'
-        + '<iframe src="' + frame.src + '" allow="fullscreen; autoplay; gamepad"></iframe>');
+    w.document.write('<title>' + document.title + '</title><style>body{margin:0}iframe{border:0;width:100vw;height:100vh}</style>');
     w.document.close();
+    const f = w.document.createElement("iframe");
+    f.src = frame.src;
+    f.title = frame.title;
+    f.allow = "fullscreen; autoplay; gamepad";
+    w.document.body.append(f);
 });
 search.addEventListener("input", () => render(search.value));
 
