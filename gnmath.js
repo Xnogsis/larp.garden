@@ -89,13 +89,16 @@ document.getElementById("showbar").addEventListener("click", () => viewer.classL
 document.getElementById("blank").addEventListener("click", () => {
     const w = window.open("about:blank");
     if (!w) return;
-    w.document.write('<title>' + document.title + '</title><style>body{margin:0}iframe{border:0;width:100vw;height:100vh}</style>');
-    w.document.close();
-    const f = w.document.createElement("iframe");
-    f.src = frame.src;
-    f.title = frame.title;
-    f.allow = "fullscreen; autoplay; gamepad";
-    w.document.body.append(f);
+    const d = w.document;
+    d.title = document.title;
+    const style = d.createElement("style");
+    style.textContent = "body{margin:0}iframe{border:0;width:100vw;height:100vh}";
+    const iframe = d.createElement("iframe");
+    iframe.title = frame.title;
+    iframe.allow = "fullscreen; autoplay; gamepad";
+    iframe.src = frame.src;
+    d.head.append(style);
+    d.body.append(iframe);
 });
 search.addEventListener("input", () => render(search.value));
 
