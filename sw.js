@@ -1,6 +1,11 @@
 // Serves /hub/<slug>/... straight out of GitHub repos via public CDNs, so
 // whole static game sites run under this origin with proper MIME types.
 // `repos` lists equivalent copies (upstream + forks), tried in order.
+//
+// Trust boundary: every repo listed here ships HTML and JS that runs as first-party
+// code on this origin (same cookies, storage, caches). Only add repos whose owners
+// are trusted; a malicious commit upstream is a malicious commit here. HUB_CSP below
+// narrows what such a page can do, but cannot isolate it from the origin.
 const HUBS = {
     umbrion:    { repos: ["EclipsarGames/Umbrion"],        branch: "main" },
     dotgui:     { repos: ["DotLYHiyou/DotGUI"],            branch: "main" },
@@ -100,6 +105,12 @@ function mimeFor(path) {
 const UNFRAME_QUERY = "?unframed";
 const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '")</script>';
 
+// Sent with every hub HTML page. Hub games need inline scripts, eval and CDN assets,
+// so script/connect sources stay open; this pins down the rest: pages can only be
+// framed by this site, cannot retarget relative URLs with <base>, cannot pull
+// workers or service workers from other origins, and cannot mix in plain http.
+const HUB_CSP = "frame-ancestors 'self'; base-uri 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+
 // Give up on a mirror that has not answered with headers after this long.
 const MIRROR_TIMEOUT_MS = 8000;
 // Mirrors are hedged: the next one in preference order starts this long after the
@@ -165,6 +176,8 @@ async function fromMirrors(slug, path) {
             headers.set("Cache-Control", owner ? "public, max-age=3600" : "public, max-age=86400");
             let body = res.body;
             if (mime === "text/html") {
+                headers.set("Content-Security-Policy", HUB_CSP);
+                headers.set("X-Content-Type-Options", "nosniff");
                 // Hub pages must keep sending a full referrer, or their root-relative
                 // links can't be routed back to the hub.
                 body = rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""));
