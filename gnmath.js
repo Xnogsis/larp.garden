@@ -88,9 +88,15 @@ document.getElementById("showbar").addEventListener("click", () => viewer.classL
 document.getElementById("blank").addEventListener("click", () => {
     const w = window.open("about:blank");
     if (!w) return;
-    w.document.write('<title>' + document.title + '</title><style>body{margin:0}iframe{border:0;width:100vw;height:100vh}</style>'
-        + '<iframe src="' + frame.src + '" allow="fullscreen; autoplay; gamepad"></iframe>');
-    w.document.close();
+    const d = w.document;
+    d.title = document.title;
+    const style = d.createElement("style");
+    style.textContent = "body{margin:0}iframe{border:0;width:100vw;height:100vh}";
+    const iframe = d.createElement("iframe");
+    iframe.allow = "fullscreen; autoplay; gamepad";
+    iframe.src = frame.src;
+    d.head.append(style);
+    d.body.append(iframe);
 });
 search.addEventListener("input", () => render(search.value));
 
