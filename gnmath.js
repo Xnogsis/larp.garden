@@ -16,15 +16,24 @@ const viewer = document.getElementById("viewer");
 const frame = document.getElementById("frame");
 let zones = [];
 
+// Wait this long for a source to answer with headers before moving on to the next.
+const SOURCE_TIMEOUT_MS = 8000;
+
+function fetchWithTimeout(url, init) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), SOURCE_TIMEOUT_MS);
+    return fetch(url, { ...init, signal: ctl.signal }).finally(() => clearTimeout(timer));
+}
+
 async function firstOk(repo, path) {
     for (const src of SOURCES) {
         try {
-            const res = await fetch(at(src, repo, path), { cache: "no-cache", referrerPolicy: "no-referrer" });
+            const res = await fetchWithTimeout(at(src, repo, path), { cache: "no-cache", referrerPolicy: "no-referrer" });
             if (res.ok) return res;
         } catch (_) { /* next source */ }
     }
     // Same-origin copy committed to this repo, for networks that drop cross-site CDN requests.
-    const local = await fetch(path).catch(() => null);
+    const local = await fetchWithTimeout(path).catch(() => null);
     if (local && local.ok) return local;
     throw new Error("all sources failed for " + repo + "/" + path);
 }
@@ -60,15 +69,18 @@ function render(filter) {
     count.textContent = shown.length + " of " + zones.length;
 }
 
-async function open(zone) {
+function open(zone) {
     if (zone.url.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
     document.getElementById("viewer-title").textContent = zone.name;
     document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
     // A few catalog entries point at renamed files; the plain "<id>.html" usually still exists.
-    let file = zone.url.replace("{HTML_URL}/", "");
-    const probe = await fetch("/hub/" + HUB + "/" + file).catch(() => null);
-    if (!probe || !probe.ok) file = zone.id + ".html";
-    frame.src = "/hub/" + HUB + "/" + file;
+    // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
+    // right away while a probe of the same URL decides whether to swap in the fallback.
+    const url = "/hub/" + HUB + "/" + zone.url.replace("{HTML_URL}/", "");
+    frame.src = url;
+    fetch(url).then((r) => r.ok, () => false).then((ok) => {
+        if (!ok && frame.src === new URL(url, location.href).href) frame.src = "/hub/" + HUB + "/" + zone.id + ".html";
+    });
     viewer.classList.add("open");
     document.title = zone.name;
     history.replaceState(null, "", "?id=" + zone.id);
