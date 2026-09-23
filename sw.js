@@ -100,13 +100,54 @@ function mimeFor(path) {
 const UNFRAME_QUERY = "?unframed";
 const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '")</script>';
 
-// Wait this long for a mirror to answer with headers before moving on to the next.
+// Give up on a mirror that has not answered with headers after this long.
 const MIRROR_TIMEOUT_MS = 8000;
+// Mirrors are hedged: the next one in preference order starts this long after the
+// previous, and the first success wins, so a hanging mirror costs at most this much.
+const HEDGE_DELAY_MS = 1500;
+// The mirror that answered most recently goes first for later requests.
+let preferredMirror = 0;
 
-function fetchWithTimeout(url, init) {
-    const ctl = new AbortController();
+function fetchWithTimeout(url, init, ctl) {
     const timer = setTimeout(() => ctl.abort(), MIRROR_TIMEOUT_MS);
     return fetch(url, { ...init, referrerPolicy: "no-referrer", signal: ctl.signal }).finally(() => clearTimeout(timer));
+}
+
+// Resolves with the first ok Response from any of the repo's mirrors, or with the
+// status the mirrors settled on. A clean 404 means the file is not in this repo at
+// all, and the other mirrors would say the same, so it ends the round early.
+function fromRepoMirrors(repo, branch, path, mirrors, cache) {
+    const order = mirrors.slice(preferredMirror).concat(mirrors.slice(0, preferredMirror));
+    return new Promise((resolve) => {
+        const timers = [];
+        const controllers = [];
+        let pending = order.length;
+        let lastStatus = 502;
+        let done = false;
+        const settle = (res) => {
+            if (done) return;
+            done = true;
+            timers.forEach(clearTimeout);
+            controllers.forEach((c) => { if (!res || c !== res.ctl) c.abort(); });
+            resolve(res ? res.res : { status: lastStatus });
+        };
+        order.forEach((build, i) => {
+            timers.push(setTimeout(async () => {
+                const ctl = new AbortController();
+                controllers.push(ctl);
+                try {
+                    const res = await fetchWithTimeout(build(repo, branch, path), { cache }, ctl);
+                    if (res.ok) {
+                        preferredMirror = mirrors.indexOf(build);
+                        return settle({ res, ctl });
+                    }
+                    lastStatus = res.status;
+                    if (res.status === 404) return settle(null);
+                } catch (_) { /* wait for the other mirrors */ }
+                if (--pending === 0) settle(null);
+            }, i * HEDGE_DELAY_MS));
+        });
+    });
 }
 
 async function fromMirrors(slug, path) {
@@ -116,31 +157,24 @@ async function fromMirrors(slug, path) {
     const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
     let lastStatus = 502;
     for (const repo of repos) {
-        for (const build of mirrors) {
-            try {
-                const res = await fetchWithTimeout(build(repo, branch, path), { cache });
-                if (res.ok) {
-                    const headers = new Headers();
-                    const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
-                    headers.set("Content-Type", mime);
-                    headers.set("Cache-Control", owner ? "public, max-age=3600" : "public, max-age=86400");
-                    let body = res.body;
-                    if (mime === "text/html") {
-                        // Hub pages must keep sending a full referrer, or their root-relative
-                        // links can't be routed back to the hub.
-                        body = rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""));
-                        body = /<head[^>]*>/i.test(body)
-                            ? body.replace(/<head[^>]*>/i, (tag) => tag + STAY_FRAMED)
-                            : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + STAY_FRAMED);
-                    }
-                    return new Response(body, { status: 200, headers });
-                }
-                lastStatus = res.status;
-                // A clean 404 means the file is not in this repo at all; the other mirrors
-                // of the same repo will say the same, so go straight to the next repo.
-                if (res.status === 404) break;
-            } catch (_) { /* try next mirror */ }
+        const res = await fromRepoMirrors(repo, branch, path, mirrors, cache);
+        if (res.ok) {
+            const headers = new Headers();
+            const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
+            headers.set("Content-Type", mime);
+            headers.set("Cache-Control", owner ? "public, max-age=3600" : "public, max-age=86400");
+            let body = res.body;
+            if (mime === "text/html") {
+                // Hub pages must keep sending a full referrer, or their root-relative
+                // links can't be routed back to the hub.
+                body = rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""));
+                body = /<head[^>]*>/i.test(body)
+                    ? body.replace(/<head[^>]*>/i, (tag) => tag + STAY_FRAMED)
+                    : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + STAY_FRAMED);
+            }
+            return new Response(body, { status: 200, headers });
         }
+        lastStatus = res.status;
     }
     return new Response("Not found: " + slug + "/" + path, { status: lastStatus, headers: { "Content-Type": "text/plain" } });
 }
