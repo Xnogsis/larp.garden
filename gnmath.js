@@ -69,6 +69,7 @@ async function open(zone) {
     const probe = await fetch("/hub/" + HUB + "/" + file).catch(() => null);
     if (!probe || !probe.ok) file = zone.id + ".html";
     frame.src = "/hub/" + HUB + "/" + file;
+    frame.title = zone.name;
     viewer.classList.add("open");
     document.title = zone.name;
     history.replaceState(null, "", "?id=" + zone.id);
@@ -93,6 +94,7 @@ document.getElementById("blank").addEventListener("click", () => {
     const style = d.createElement("style");
     style.textContent = "body{margin:0}iframe{border:0;width:100vw;height:100vh}";
     const iframe = d.createElement("iframe");
+    iframe.title = frame.title;
     iframe.allow = "fullscreen; autoplay; gamepad";
     iframe.src = frame.src;
     d.head.append(style);
