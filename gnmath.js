@@ -37,7 +37,7 @@ function coverFor(zone) {
 function render(filter) {
     const q = filter.trim().toLowerCase();
     const shown = zones.filter((z) => !q || z.name.toLowerCase().includes(q));
-    grid.textContent = "";
+    const rows = document.createDocumentFragment();
     for (const z of shown) {
         const li = document.createElement("li");
         const btn = document.createElement("button");
@@ -55,8 +55,9 @@ function render(filter) {
         btn.append(img, name);
         btn.addEventListener("click", () => open(z));
         li.append(btn);
-        grid.append(li);
+        rows.append(li);
     }
+    grid.replaceChildren(rows);
     count.textContent = shown.length + " of " + zones.length;
 }
 
@@ -100,7 +101,11 @@ document.getElementById("blank").addEventListener("click", () => {
     d.head.append(style);
     d.body.append(iframe);
 });
-search.addEventListener("input", () => render(search.value));
+let searchTimer;
+search.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => render(search.value), 150);
+});
 
 const swReady = "serviceWorker" in navigator
     ? navigator.serviceWorker.register("sw.js", { scope: "/" }).then((reg) => {
