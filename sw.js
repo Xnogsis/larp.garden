@@ -107,9 +107,11 @@ const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY 
 
 // Sent with every hub HTML page. Hub games need inline scripts, eval and CDN assets,
 // so script/connect sources stay open; this pins down the rest: pages can only be
-// framed by this site, cannot retarget relative URLs with <base>, cannot pull
-// workers or service workers from other origins, and cannot mix in plain http.
-const HUB_CSP = "frame-ancestors 'self'; base-uri 'self'; worker-src 'self' blob:; upgrade-insecure-requests";
+// framed by this site, can only retarget relative URLs with <base> at the CDNs the
+// games are served from anyway (gn-math pages do this for games hosted in other
+// repos), cannot pull workers or service workers from other origins, and cannot mix
+// in plain http.
+const HUB_CSP = "frame-ancestors 'self'; base-uri 'self' https://*.jsdelivr.net https://esm.sh https://raw.githubusercontent.com https://cdn.statically.io; worker-src 'self' blob:; upgrade-insecure-requests";
 
 // Give up on a mirror that has not answered with headers after this long.
 const MIRROR_TIMEOUT_MS = 8000;
