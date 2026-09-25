@@ -44,6 +44,46 @@ function rewriteUpstream(slug, text) {
     return text.replace(UPSTREAM_RE, (_, repo) => `https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/`);
 }
 
+// bubbls/youtube-playables' ytgame.js is the real YouTube Playables SDK, which
+// waits on a YouTube host that never exists here: getLanguage() pends forever,
+// so game wrappers stall on a black screen before loading their scripts. Its
+// tail also fetches location.orgin+"/pages/home.html" (typo for origin), which
+// resolves to <game>/undefined/pages/home.html and 404s. The stub mirrors the
+// real SDK's offline behavior (loadData resolves "", isAudioEnabled is sync,
+// getLanguage falls back to "en"); unlisted members resolve to a no-op that
+// returns a resolved promise so callers can invoke them unconditionally.
+const YTGAME_RE = /^\/gh\/bubbls\/youtube-playables@[^/]+\/ytgame\.js$/;
+const YTGAME_STUB = `'use strict';
+window.ytgame = (() => {
+    const res = (v) => Promise.resolve(v);
+    const noop = () => {};
+    const wrap = (o) => new Proxy(o, { get(t, k) {
+        if (k in t) return t[k];
+        if (typeof k === "symbol" || k === "then" || k === "catch" || k === "finally") return undefined;
+        return (t[k] = wrap(function () { return res(undefined); }));
+    } });
+    return wrap({
+        SDK_VERSION: "stub",
+        IN_PLAYABLES_ENV: false,
+        SdkError: class extends Error {},
+        SdkErrorType: {},
+        system: wrap({
+            getLanguage: () => res((navigator.language || "en").split("-")[0]),
+            isAudioEnabled: () => true,
+            onAudioEnabledChange: noop,
+        }),
+        game: wrap({
+            firstFrameReady: noop,
+            gameReady: noop,
+            loadData: () => res(""),
+            saveData: () => res(),
+        }),
+        health: wrap({ logError: noop, logWarning: noop }),
+        engagement: wrap({ sendScore: () => res(), openYTContent: noop, share: () => res() }),
+        ads: wrap({}),
+    });
+})();`;
+
 const ESM_MIRROR = (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`);
 const MIRRORS = [
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
@@ -202,6 +242,12 @@ self.addEventListener("fetch", (event) => {
     // hub with its own copy are pointed at that copy (the HTML was rewritten already).
     if (url.origin !== self.location.origin) {
         if (!JSDELIVR_RE.test(url.href)) return;
+        if (YTGAME_RE.test(url.pathname)) {
+            event.respondWith(new Response(YTGAME_STUB, {
+                headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" },
+            }));
+            return;
+        }
         event.respondWith((async () => {
             const slug = await hubFromClient(event);
             let target = slug ? rewriteUpstream(slug, url.href) : url.href;
