@@ -84,6 +84,21 @@ window.ytgame = (() => {
     });
 })();`;
 
+// Some Construct 3 games (Basket Random, Boxing Random, ...) load their engine from a
+// Weebly upload in which every requestAnimationFrame was renamed cancelAnimationFrame,
+// so the runtime draws its first frame and never ticks again: the game sits on its
+// PLAY screen everywhere, ads or not. Real cancel calls are statements; a call whose
+// result is stored ("x = " / "set(k, ") can only have been a request, so those get
+// their name back.
+const BROKEN_C3_RE = /^https:\/\/[^/]+\.preview\.editmysite\.com\/.+\/c3runtime\.js$/;
+const BROKEN_C3_RAF_RE = /([=,](?:self\.)?)cancelAnimationFrame\(/g;
+async function fixedC3Runtime(request) {
+    const res = await fetch(request.url, { mode: "cors" });
+    if (!res.ok) return res;
+    const body = (await res.text()).replace(BROKEN_C3_RAF_RE, "$1requestAnimationFrame(");
+    return new Response(body, { headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" } });
+}
+
 // Same-site front for jsDelivr (cdn-worker.js). Managed networks (schools, offices)
 // often block jsDelivr and GitHub outright but let anything under this site's own
 // domain through, so it goes first; where it is unreachable the next mirror starts at
@@ -253,6 +268,10 @@ self.addEventListener("fetch", (event) => {
     // Game scripts build asset URLs at runtime too, so upstream requests from a
     // hub with its own copy are pointed at that copy (the HTML was rewritten already).
     if (url.origin !== self.location.origin) {
+        if (BROKEN_C3_RE.test(url.href)) {
+            event.respondWith(fixedC3Runtime(event.request).catch(() => fetch(event.request)));
+            return;
+        }
         if (!JSDELIVR_RE.test(url.href)) return;
         if (YTGAME_RE.test(url.pathname)) {
             event.respondWith(new Response(YTGAME_STUB, {
