@@ -84,8 +84,16 @@ window.ytgame = (() => {
     });
 })();`;
 
+// Same-site front for jsDelivr (cdn-worker.js). Managed networks (schools, offices)
+// often block jsDelivr and GitHub outright but let anything under this site's own
+// domain through, so it goes first; where it is unreachable the next mirror starts at
+// once and the one that answers stays preferred.
+const SAME_SITE_CDN = "https://cdn.larp.garden";
+const viaSameSite = (href) => href.replace(/^https:\/\/[a-z]+\.jsdelivr\.net/, SAME_SITE_CDN);
+
 const ESM_MIRROR = (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`);
 const MIRRORS = [
+    (r, b, p) => `${SAME_SITE_CDN}/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://gcore.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://fastly.jsdelivr.net/gh/${r}@${b}/${p}`,
@@ -155,51 +163,53 @@ const HUB_CSP = "frame-ancestors 'self'; base-uri 'self' https://*.jsdelivr.net 
 
 // Give up on a mirror that has not answered with headers after this long.
 const MIRROR_TIMEOUT_MS = 8000;
-// Mirrors are hedged: the next one in preference order starts this long after the
-// previous, and the first success wins, so a hanging mirror costs at most this much.
+// Copies are hedged: the next one in preference order starts this long after the
+// previous (or as soon as the previous fails), and the first success wins, so a
+// hanging host costs at most this much.
 const HEDGE_DELAY_MS = 1500;
 // The mirror that answered most recently goes first for later requests.
 let preferredMirror = 0;
+// Whether the same-site front answered a page's own CDN request more recently than jsDelivr did.
+let preferSameSite = false;
 
 function fetchWithTimeout(url, init, ctl) {
     const timer = setTimeout(() => ctl.abort(), MIRROR_TIMEOUT_MS);
     return fetch(url, { ...init, referrerPolicy: "no-referrer", signal: ctl.signal }).finally(() => clearTimeout(timer));
 }
 
-// Resolves with the first ok Response from any of the repo's mirrors, or with the
-// status the mirrors settled on. A clean 404 means the file is not in this repo at
-// all, and the other mirrors would say the same, so it ends the round early.
-function fromRepoMirrors(repo, branch, path, mirrors, cache) {
-    const order = mirrors.slice(preferredMirror).concat(mirrors.slice(0, preferredMirror));
+// Resolves with the first usable Response from any of the equivalent URLs and the index
+// that won, or with the status they settled on. A clean 404 means the file does not
+// exist and the other copies would say the same, so it ends the round early.
+function hedged(urls, init) {
     return new Promise((resolve) => {
         const timers = [];
         const controllers = [];
-        let pending = order.length;
+        let pending = urls.length;
         let lastStatus = 502;
         let done = false;
-        const settle = (res) => {
+        const settle = (res, index) => {
             if (done) return;
             done = true;
             timers.forEach(clearTimeout);
             controllers.forEach((c) => { if (!res || c !== res.ctl) c.abort(); });
-            resolve(res ? res.res : { status: lastStatus });
+            resolve({ res: res ? res.res : { status: lastStatus }, index });
         };
-        order.forEach((build, i) => {
-            timers.push(setTimeout(async () => {
-                const ctl = new AbortController();
-                controllers.push(ctl);
-                try {
-                    const res = await fetchWithTimeout(build(repo, branch, path), { cache }, ctl);
-                    if (res.ok) {
-                        preferredMirror = mirrors.indexOf(build);
-                        return settle({ res, ctl });
-                    }
-                    lastStatus = res.status;
-                    if (res.status === 404) return settle(null);
-                } catch (_) { /* wait for the other mirrors */ }
-                if (--pending === 0) settle(null);
-            }, i * HEDGE_DELAY_MS));
-        });
+        const start = async (i) => {
+            if (done || timers[i] === null) return;
+            clearTimeout(timers[i]);
+            timers[i] = null;
+            const ctl = new AbortController();
+            controllers.push(ctl);
+            try {
+                const res = await fetchWithTimeout(urls[i], init, ctl);
+                if (res.ok || res.type === "opaque") return settle({ res, ctl }, i);
+                lastStatus = res.status;
+                if (res.status === 404) return settle(null, -1);
+            } catch (_) { /* let the other copies answer */ }
+            if (--pending === 0) settle(null, -1);
+            else if (i + 1 < urls.length) start(i + 1);
+        };
+        urls.forEach((_, i) => timers.push(setTimeout(start, i * HEDGE_DELAY_MS, i)));
     });
 }
 
@@ -210,8 +220,10 @@ async function fromMirrors(slug, path) {
     const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
     let lastStatus = 502;
     for (const repo of repos) {
-        const res = await fromRepoMirrors(repo, branch, path, mirrors, cache);
+        const order = mirrors.slice(preferredMirror).concat(mirrors.slice(0, preferredMirror));
+        const { res, index } = await hedged(order.map((build) => build(repo, branch, path)), { cache });
         if (res.ok) {
+            preferredMirror = mirrors.indexOf(order[index]);
             const headers = new Headers();
             const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
             headers.set("Content-Type", mime);
@@ -250,18 +262,23 @@ self.addEventListener("fetch", (event) => {
         }
         event.respondWith((async () => {
             const slug = await hubFromClient(event);
-            let target = slug ? rewriteUpstream(slug, url.href) : url.href;
-            if (slug && HUBS[slug].esm) target = viaEsm(target);
-            if (target === url.href) return fetch(event.request);
+            const target = slug ? rewriteUpstream(slug, url.href) : url.href;
             const req = event.request;
             const init = req.mode === "navigate"
                 ? {}
                 : { mode: req.mode, credentials: req.credentials, headers: req.headers, redirect: req.redirect };
-            try {
-                const res = await fetch(target, init);
-                if (res.ok || res.type === "opaque") return res;
-            } catch (_) { /* fall back to the original */ }
-            return fetch(req);
+            if (slug && HUBS[slug].esm) {
+                try {
+                    const res = await fetch(viaEsm(target), init);
+                    if (res.ok || res.type === "opaque") return res;
+                } catch (_) { /* fall back to the original */ }
+                return fetch(req);
+            }
+            const urls = preferSameSite ? [viaSameSite(target), target] : [target, viaSameSite(target)];
+            const { res, index } = await hedged(urls, init);
+            if (!(res instanceof Response)) return fetch(req);
+            preferSameSite = urls[index] !== target;
+            return res;
         })());
         return;
     }
