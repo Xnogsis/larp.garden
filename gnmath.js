@@ -62,7 +62,7 @@ function render(filter) {
         const name = document.createElement("span");
         name.textContent = z.name;
         btn.append(img, name);
-        btn.addEventListener("click", () => open(z));
+        btn.addEventListener("click", () => openZone(z));
         li.append(btn);
         rows.append(li);
     }
@@ -70,7 +70,7 @@ function render(filter) {
     count.textContent = shown.length + " of " + zones.length;
 }
 
-function open(zone) {
+function openZone(zone) {
     if (zone.url.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
     document.getElementById("viewer-title").textContent = zone.name;
     document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
@@ -95,7 +95,8 @@ document.getElementById("close").addEventListener("click", () => {
     history.replaceState(null, "", location.pathname);
 });
 document.getElementById("fullscreen").addEventListener("click", () => frame.requestFullscreen && frame.requestFullscreen());
-document.getElementById("newtab").addEventListener("click", () => window.open(frame.src, "_blank"));
+// Hub pages bounce out when not framed, so the new tab gets this viewer, which reopens ?id=.
+document.getElementById("newtab").addEventListener("click", () => window.open(location.href, "_blank"));
 document.getElementById("hidebar").addEventListener("click", () => viewer.classList.add("nobar"));
 document.getElementById("showbar").addEventListener("click", () => viewer.classList.remove("nobar"));
 // The new tab has our origin, so sw.js still serves the iframe; only the address bar shows about:blank.
@@ -143,6 +144,6 @@ Promise.all([firstOk("assets", "zones.json").then((r) => r.json()), swReady])
         render("");
         const id = new URLSearchParams(location.search).get("id");
         const z = id && zones.find((x) => String(x.id) === id);
-        if (z) open(z);
+        if (z) openZone(z);
     })
     .catch((e) => { status.textContent = "Could not load " + TITLE + ": " + e.message; });
