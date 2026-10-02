@@ -78,6 +78,7 @@ function openZone(zone) {
     // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
     // right away while a probe of the same URL decides whether to swap in the fallback.
     const url = "/hub/" + HUB + "/" + zone.url.replace("{HTML_URL}/", "");
+    note("open", zone.id + " " + url);
     frame.src = url;
     fetch(url).then((r) => r.ok, () => false).then((ok) => {
         if (!ok && frame.src === new URL(url, location.href).href) frame.src = "/hub/" + HUB + "/" + zone.id + ".html";
@@ -114,6 +115,86 @@ document.getElementById("blank").addEventListener("click", () => {
     d.head.append(style);
     d.body.append(iframe);
 });
+// Debug panel for when a game stays black and devtools are out of reach. Hub pages call
+// parent.lgDebug(window) as they start (sw.js injects the call), so their errors and failed
+// loads are collected here; the "debug" button shows them along with what the browser supports.
+const debugLog = [];
+const debugPanel = document.createElement("div");
+const debugText = document.createElement("pre");
+let gpu;
+function note(kind, msg) {
+    if (debugLog.length >= 300) debugLog.shift();
+    debugLog.push((performance.now() / 1000).toFixed(1).padStart(6) + "s " + kind + " " + String(msg).slice(0, 400));
+    if (debugPanel.isConnected) showDebug();
+}
+function describe(x) {
+    return x instanceof Error ? x.stack || x.message : typeof x === "object" ? (() => { try { return JSON.stringify(x); } catch (_) { return String(x); } })() : String(x);
+}
+window.lgDebug = (win) => {
+    note("page", win.location.href);
+    win.addEventListener("error", (e) => {
+        const el = e.target;
+        if (el && el !== win && (el.src || el.href)) note("load failed", el.localName + " " + (el.src || el.href));
+        else note("error", e.message + (e.filename ? " @ " + e.filename + ":" + e.lineno : ""));
+    }, true);
+    win.addEventListener("unhandledrejection", (e) => note("rejection", describe(e.reason)));
+    for (const level of ["error", "warn"]) {
+        const orig = win.console[level];
+        win.console[level] = (...args) => { note("console." + level, args.map(describe).join(" ")); return orig.apply(win.console, args); };
+    }
+    const fetch0 = win.fetch;
+    win.fetch = (...args) => fetch0.apply(win, args).then(
+        (r) => { if (!r.ok && r.type !== "opaque") note("fetch " + r.status, r.url); return r; },
+        (e) => { note("fetch failed", (args[0] && args[0].url) || args[0]); throw e; });
+    const open0 = win.XMLHttpRequest.prototype.open;
+    win.XMLHttpRequest.prototype.open = function (method, url) {
+        this.addEventListener("loadend", () => { if (!this.status || this.status >= 400) note("xhr " + (this.status || "failed"), url); });
+        return open0.apply(this, arguments);
+    };
+};
+function showDebug() {
+    if (!gpu) {
+        const c = document.createElement("canvas");
+        const gl = c.getContext("webgl2") || c.getContext("webgl");
+        const info = gl && gl.getExtension("WEBGL_debug_renderer_info");
+        gpu = !gl ? "unavailable" : (gl instanceof WebGLRenderingContext ? "webgl1 " : "webgl2 ")
+            + gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
+    }
+    let canvases = "n/a";
+    try { canvases = [...frame.contentDocument.querySelectorAll("canvas")].map((c) => c.width + "x" + c.height).join(", ") || "none"; } catch (_) { /* cross-origin page */ }
+    debugText.textContent = [
+        "browser: " + navigator.userAgent,
+        "webgl: " + gpu,
+        "service worker: " + (navigator.serviceWorker && navigator.serviceWorker.controller ? "active" : "NOT controlling this page"),
+        "game: " + frame.src,
+        "game canvases: " + canvases,
+        "",
+    ].concat(debugLog.length ? debugLog : ["(nothing logged yet)"]).join("\n");
+}
+debugPanel.id = "debug";
+const debugBar = document.createElement("div");
+const copyBtn = document.createElement("button");
+copyBtn.type = "button";
+copyBtn.textContent = "copy";
+copyBtn.addEventListener("click", () => navigator.clipboard.writeText(debugText.textContent).then(
+    () => { copyBtn.textContent = "copied"; }, () => getSelection().selectAllChildren(debugText)));
+const hideBtn = document.createElement("button");
+hideBtn.type = "button";
+hideBtn.textContent = "close";
+hideBtn.addEventListener("click", () => debugPanel.remove());
+debugBar.append("debug log ", copyBtn, " ", hideBtn);
+debugPanel.append(debugBar, debugText);
+const debugBtn = document.createElement("button");
+debugBtn.type = "button";
+debugBtn.textContent = "debug";
+debugBtn.addEventListener("click", () => {
+    if (debugPanel.isConnected) return debugPanel.remove();
+    copyBtn.textContent = "copy";
+    viewer.append(debugPanel);
+    showDebug();
+});
+document.getElementById("fullscreen").before(debugBtn);
+
 let searchTimer;
 search.addEventListener("input", () => {
     clearTimeout(searchTimer);
