@@ -94,5 +94,41 @@
             unlockSite(homePage);
         });
     </script>
+    <script>
+        // Tripwire: shows a notice when something outside this page adds or removes a
+        // top-level element in this tab (e.g. an extension's overlay). Read-only: it
+        // never touches, hides or disables anything that made the change.
+        (() => {
+            const roots = [document.documentElement, document.body];
+            const known = new WeakSet();
+            for (const root of roots) for (const el of root.children) known.add(el);
+            let notice = null;
+            const trip = (what) => {
+                console.warn("page modified:", what);
+                if (notice) return;
+                notice = document.createElement("div");
+                notice.id = "tripwire";
+                notice.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#fff;color:#000;border-bottom:2px solid #000;font:16px 'Times New Roman',serif;padding:6px 10px";
+                notice.textContent = "This page was changed from outside (" + what + "). ";
+                const dismiss = document.createElement("button");
+                dismiss.type = "button";
+                dismiss.textContent = "dismiss";
+                dismiss.addEventListener("click", () => { notice.remove(); notice = null; });
+                notice.append(dismiss);
+                document.documentElement.append(notice);
+            };
+            const watch = new MutationObserver((records) => {
+                for (const r of records) {
+                    for (const n of r.addedNodes) {
+                        if (n.nodeType === 1 && n.id !== "tripwire" && !known.has(n)) { known.add(n); return trip("added <" + n.localName + ">"); }
+                    }
+                    for (const n of r.removedNodes) {
+                        if (n.nodeType === 1 && known.has(n)) return trip("removed <" + n.localName + ">");
+                    }
+                }
+            });
+            for (const root of roots) watch.observe(root, { childList: true });
+        })();
+    </script>
 </body>
 </html>
