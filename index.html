@@ -108,7 +108,6 @@
             try { allowed = new Set(JSON.parse(localStorage.getItem(KEY)) || []); } catch (e) { allowed = new Set(); }
             const describe = (n) => n.localName + (n.id ? "#" + n.id : "") + [...n.classList].map((c) => "." + c).join("");
             const trip = (what) => {
-                if (allowed.has(what)) return;
                 console.warn("page modified:", what);
                 if (!confirm("This page was changed from outside:\n\n" + what + "\n\nOK to allow this from now on, Cancel to keep warning.")) return;
                 allowed.add(what);
@@ -117,10 +116,12 @@
             const watch = new MutationObserver((records) => {
                 for (const r of records) {
                     for (const n of r.addedNodes) {
-                        if (n.nodeType === 1 && !known.has(n)) { known.add(n); return trip("added " + describe(n)); }
+                        if (n.nodeType !== 1 || known.has(n)) continue;
+                        known.add(n);
+                        if (!allowed.has("added " + describe(n))) return trip("added " + describe(n));
                     }
                     for (const n of r.removedNodes) {
-                        if (n.nodeType === 1 && known.has(n)) return trip("removed " + describe(n));
+                        if (n.nodeType === 1 && known.has(n) && !allowed.has("removed " + describe(n))) return trip("removed " + describe(n));
                     }
                 }
             });
