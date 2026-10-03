@@ -166,7 +166,8 @@ function mimeFor(path) {
 // window they would show the hub path in the address bar, so bounce to the 404
 // page (the saved cookie reopens the hub properly from there).
 const UNFRAME_QUERY = "?unframed";
-const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '")</script>';
+// It also hands the page's window to the catalog's debug panel (gnmath.js lgDebug), if the parent has one.
+const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '");try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>';
 
 // Sent with every hub HTML page. Hub games need inline scripts, eval and CDN assets,
 // so script/connect sources stay open; this pins down the rest: pages can only be
