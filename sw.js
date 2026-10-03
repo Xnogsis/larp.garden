@@ -251,6 +251,11 @@ async function fromMirrors(slug, path) {
                 // Hub pages must keep sending a full referrer, or their root-relative
                 // links can't be routed back to the hub.
                 body = rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""));
+                // Draw Climber's egret build draws nothing on some WebGL/ANGLE drivers
+                // (black canvas, no errors). Its 2D canvas renderer paints correctly.
+                if (body.includes("yrgen73/draw-cl")) {
+                    body = body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"');
+                }
                 body = /<head[^>]*>/i.test(body)
                     ? body.replace(/<head[^>]*>/i, (tag) => tag + STAY_FRAMED)
                     : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + STAY_FRAMED);
