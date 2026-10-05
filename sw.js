@@ -22,7 +22,9 @@ const HUBS = {
     gnmirror:   { repos: ["Xnogsis/html"], branch: "main", owner: "Xnogsis" },
     // Same repos as gnmath but everything goes through esm.sh, including the jsDelivr
     // URLs the game pages request themselves, for networks that block jsDelivr.
-    gnesm:      { repos: ["freebuisness/html", "gn-math/html"], branch: "main", esm: true },
+    // esm.sh reads from GitHub, so games whose upstream repo is gone get a live copy instead.
+    gnesm:      { repos: ["freebuisness/html", "gn-math/html", "3kh0/3kh0-lite"], branch: "main", esm: true,
+                  pages: { "96.html": "projects/motox3m/index.html" } },
 };
 
 // Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
@@ -234,7 +236,8 @@ function hedged(urls, init) {
 }
 
 async function fromMirrors(slug, path) {
-    const { repos, branch, owner, esm } = HUBS[slug];
+    const { repos, branch, owner, esm, pages } = HUBS[slug];
+    if (pages && pages[path]) return Response.redirect("/hub/" + slug + "/" + pages[path], 302);
     // The owner's own forks change when they sync them; do not pin those for a day.
     const cache = owner ? "default" : "force-cache";
     const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
