@@ -205,12 +205,13 @@ function hedged(urls, init) {
         let pending = urls.length;
         let lastStatus = 502;
         let done = false;
+        const tried = [];
         const settle = (res, index) => {
             if (done) return;
             done = true;
             timers.forEach(clearTimeout);
             controllers.forEach((c) => { if (!res || c !== res.ctl) c.abort(); });
-            resolve({ res: res ? res.res : { status: lastStatus }, index });
+            resolve({ res: res ? res.res : { status: lastStatus }, index, tried });
         };
         const start = async (i) => {
             if (done || timers[i] === null) return;
@@ -220,10 +221,11 @@ function hedged(urls, init) {
             controllers.push(ctl);
             try {
                 const res = await fetchWithTimeout(urls[i], init, ctl);
+                tried.push(res.status + " " + urls[i]);
                 if (res.ok || res.type === "opaque") return settle({ res, ctl }, i);
                 lastStatus = res.status;
                 if (res.status === 404) return settle(null, -1);
-            } catch (_) { /* let the other copies answer */ }
+            } catch (e) { tried.push(e.name + " " + urls[i]); }
             if (--pending === 0) settle(null, -1);
             else if (i + 1 < urls.length) start(i + 1);
         };
@@ -237,9 +239,11 @@ async function fromMirrors(slug, path) {
     const cache = owner ? "default" : "force-cache";
     const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
     let lastStatus = 502;
+    const tried = [];
     for (const repo of repos) {
         const order = mirrors.slice(preferredMirror).concat(mirrors.slice(0, preferredMirror));
-        const { res, index } = await hedged(order.map((build) => build(repo, branch, path)), { cache });
+        const { res, index, tried: t } = await hedged(order.map((build) => build(repo, branch, path)), { cache });
+        tried.push(...t);
         if (res.ok) {
             preferredMirror = mirrors.indexOf(order[index]);
             const headers = new Headers();
@@ -267,7 +271,8 @@ async function fromMirrors(slug, path) {
         }
         lastStatus = res.status;
     }
-    return new Response("Not found: " + slug + "/" + path, { status: lastStatus, headers: { "Content-Type": "text/plain" } });
+    // Listed so a user without devtools can paste which mirror answered what (AbortError = cut off or timed out).
+    return new Response("Not found: " + slug + "/" + path + "\n\n" + tried.join("\n"), { status: lastStatus, headers: { "Content-Type": "text/plain" } });
 }
 
 self.addEventListener("fetch", (event) => {
