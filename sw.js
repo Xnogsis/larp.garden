@@ -168,6 +168,8 @@ function mimeFor(path) {
 const UNFRAME_QUERY = "?unframed";
 // It also hands the page's window to the catalog's debug panel (gnmath.js lgDebug), if the parent has one.
 const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '");try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>';
+// Synchronous XHRs bypass the service worker, so esm hubs reroute those in the page.
+const ESM_SYNC_XHR = `<script>(()=>{const JSDELIVR_RE=${JSDELIVR_RE};const viaEsm=${viaEsm};const open=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u,a,...r){if(a===false)u=viaEsm(new URL(u,document.baseURI).href);return open.call(this,m,u,a,...r)}})()</script>`;
 
 // Sent with every hub HTML page. Hub games need inline scripts, eval and CDN assets,
 // so script/connect sources stay open; this pins down the rest: pages can only be
@@ -256,9 +258,10 @@ async function fromMirrors(slug, path) {
                 if (body.includes("yrgen73/draw-cl")) {
                     body = body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"');
                 }
+                const inject = esm ? STAY_FRAMED + ESM_SYNC_XHR : STAY_FRAMED;
                 body = /<head[^>]*>/i.test(body)
-                    ? body.replace(/<head[^>]*>/i, (tag) => tag + STAY_FRAMED)
-                    : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + STAY_FRAMED);
+                    ? body.replace(/<head[^>]*>/i, (tag) => tag + inject)
+                    : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + inject);
             }
             return new Response(body, { status: 200, headers });
         }
