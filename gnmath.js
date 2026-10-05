@@ -71,13 +71,13 @@ function render(filter) {
 }
 
 // Retro Bowl's files come from jsDelivr; the esm.sh hub still loads them on networks that block it.
-const ESM_NOTE_IDS = [33];
+// College's come from a repo esm.sh refuses to serve, so it points at plain Retro Bowl instead.
+const ESM_NOTES = { 33: [33, "open in esm.sh option"], 34: [33, "play Retro Bowl in esm.sh option"] };
 const esmNote = document.createElement("span");
 esmNote.hidden = true;
 esmNote.textContent = "Black screen? Your network may block jsDelivr. ";
 const esmButton = document.createElement("button");
 esmButton.type = "button";
-esmButton.textContent = "open in esm.sh option";
 esmButton.addEventListener("click", () => { location.href = "gnesm.html?id=" + esmNote.dataset.id; });
 esmNote.append(esmButton);
 document.getElementById("viewer-author").after(esmNote);
@@ -86,8 +86,10 @@ function openZone(zone) {
     if (zone.url.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
     document.getElementById("viewer-title").textContent = zone.name;
     document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
-    esmNote.hidden = HUB === "gnesm" || !ESM_NOTE_IDS.includes(zone.id);
-    esmNote.dataset.id = zone.id;
+    const [esmId, esmLabel] = ESM_NOTES[zone.id] || [];
+    esmNote.hidden = !esmId || (HUB === "gnesm" && esmId === zone.id);
+    esmNote.dataset.id = esmId;
+    esmButton.textContent = esmLabel;
     // A few catalog entries point at renamed files; the plain "<id>.html" usually still exists.
     // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
     // right away while a probe of the same URL decides whether to swap in the fallback.
