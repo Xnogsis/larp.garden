@@ -101,20 +101,20 @@ async function fixedC3Runtime(request) {
 
 // Same-site front for jsDelivr (cdn-worker.js). Managed networks (schools, offices)
 // often block jsDelivr and GitHub outright but let anything under this site's own
-// domain through, so it goes first; where it is unreachable the next mirror starts at
-// once and the one that answers stays preferred.
+// domain through. It goes last: filter proxies answer it with their own 404 while it
+// is not deployed, and a 404 ends the hedged round before the real mirrors are tried.
 const SAME_SITE_CDN = "https://cdn.larp.garden";
 const viaSameSite = (href) => href.replace(/^https:\/\/[a-z]+\.jsdelivr\.net/, SAME_SITE_CDN);
 
 const ESM_MIRROR = (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`);
 const MIRRORS = [
-    (r, b, p) => `${SAME_SITE_CDN}/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://gcore.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://fastly.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://testingcf.jsdelivr.net/gh/${r}@${b}/${p}`,
     (r, b, p) => `https://raw.githubusercontent.com/${r}/${b}/${p}`,
     (r, b, p) => `https://cdn.statically.io/gh/${r}/${b}/${p}`,
+    (r, b, p) => `${SAME_SITE_CDN}/gh/${r}@${b}/${p}`,
 ];
 
 const MIME = {
