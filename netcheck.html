@@ -1,0 +1,77 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>network check</title>
+<style>
+ body{font:16px "Times New Roman",serif;margin:24px;max-width:760px}
+ h1{font-size:22px;margin:0 0 4px}
+ p{margin:4px 0 16px;color:#333}
+ table{border-collapse:collapse;width:100%}
+ th,td{border:1px solid #000;padding:6px 8px;text-align:left;vertical-align:top}
+ th{background:#eee}
+ .u{font-family:"Courier New",monospace;font-size:12px;word-break:break-all}
+ .ok{background:#d7f5d7} .bad{background:#f7d4d4} .wait{color:#888}
+ button{font:16px "Times New Roman",serif;border:2px solid #000;background:#ffffe0;padding:6px 14px;cursor:pointer;box-shadow:3px 3px 0 #000}
+ #out{white-space:pre-wrap;border:2px solid #000;padding:10px;margin-top:14px;font-family:"Courier New",monospace;font-size:12px;background:#fafafa}
+</style></head><body>
+<h1>larp.garden network check</h1>
+<p>Fetches the same files a few different ways to see which kind of request your network blocks. Everything passes on an open connection. Opening a game afterwards turns the game loader back on. When it finishes, press <b>Copy results</b> and paste them back.</p>
+<p><button id="copy">Copy results</button> <span id="status"></span></p>
+<table id="t"><thead><tr><th>#</th><th>request</th><th>result</th></tr></thead><tbody></tbody></table>
+<div id="out" hidden></div>
+<script>
+const U={
+ jd:"https://cdn.jsdelivr.net/gh/3kh0/3kh0-lite@main/index.html",
+ jdnpm:"https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js",
+ esm:"https://esm.sh/gh/3kh0/3kh0-lite@main/index.html?raw",
+ st:"https://cdn.statically.io/gh/3kh0/3kh0-lite/main/index.html",
+};
+const TESTS=[
+ ["jsDelivr: fetch, cors, no referrer (what the site does)",()=>f(U.jd,{mode:"cors",referrerPolicy:"no-referrer"})],
+ ["jsDelivr: fetch, cors, with referrer",()=>f(U.jd,{mode:"cors"})],
+ ["jsDelivr: fetch, no-cors",()=>f(U.jd,{mode:"no-cors"})],
+ ["jsDelivr: script tag",()=>tag("script",U.jdnpm)],
+ ["jsDelivr npm: fetch, cors, no referrer",()=>f(U.jdnpm,{mode:"cors",referrerPolicy:"no-referrer"})],
+ ["esm.sh: fetch, cors, no referrer",()=>f(U.esm,{mode:"cors",referrerPolicy:"no-referrer"})],
+ ["esm.sh: fetch, no-cors",()=>f(U.esm,{mode:"no-cors"})],
+ ["statically: fetch, cors, no referrer",()=>f(U.st,{mode:"cors",referrerPolicy:"no-referrer"})],
+ ["statically: fetch, no-cors",()=>f(U.st,{mode:"no-cors"})],
+];
+const tb=document.querySelector("#t tbody");
+const rows=TESTS.map(([label],i)=>{
+ const tr=document.createElement("tr");
+ tr.innerHTML=`<td>${i+1}</td><td>${label}</td><td class="res wait">testing…</td>`;
+ tb.appendChild(tr); return tr.querySelector(".res");
+});
+const timeout=(p)=>Promise.race([p,new Promise(r=>setTimeout(()=>r("FAIL (timeout)"),8000))]);
+function f(url,opt){
+ return timeout(fetch(url,{cache:"no-store",...opt})
+  .then(r=>r.type==="opaque"?"PASS (opaque)":(r.ok?"PASS ":"FAIL ")+r.status)
+  .catch(e=>"FAIL ("+e.name+": "+e.message+")"));
+}
+function tag(name,url){
+ return timeout(new Promise(r=>{const el=document.createElement(name);el.src=url;el.onload=()=>r("PASS");el.onerror=()=>r("FAIL (load error)");document.head.appendChild(el);}));
+}
+(async()=>{
+ // Run uncontrolled so results reflect the network, not sw.js rerouting jsDelivr.
+ if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+  for(const r of await navigator.serviceWorker.getRegistrations()) await r.unregister();
+  location.reload(); return;
+ }
+ const results=[];
+ for(let i=0;i<TESTS.length;i++){
+  const r=await TESTS[i][1]();
+  rows[i].textContent=r;
+  rows[i].className="res "+(r.startsWith("PASS")?"ok":"bad");
+  results.push(`${i+1}. ${r.padEnd(24)} ${TESTS[i][0]}`);
+ }
+ const txt="CDN check results:\n"+results.join("\n");
+ document.getElementById("out").textContent=txt;
+ document.getElementById("out").hidden=false;
+ document.getElementById("status").textContent="done — press Copy results";
+ window.__txt=txt;
+})();
+document.getElementById("copy").onclick=async()=>{
+ try{await navigator.clipboard.writeText(window.__txt||"");document.getElementById("status").textContent="copied!";}
+ catch(e){const s=getSelection();s.removeAllRanges();const r=document.createRange();r.selectNode(document.getElementById("out"));s.addRange(r);document.getElementById("status").textContent="select the box and copy";}
+};
+</script></body></html>
