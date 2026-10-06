@@ -36,10 +36,31 @@ addEventListener("message", ({ data }) => {
   const tr = document.createElement("tr");
   for (const v of [data.ctx, data.req, data.res]) tr.insertCell().textContent = v;
   document.getElementById("t").appendChild(tr);
-  lines.push(`${data.ctx}: ${data.req}`.padEnd(40) + data.res); lines.sort();
+  lines.push(`${data.ctx}: ${data.req}`.padEnd(40) + " " + data.res); lines.sort();
   document.getElementById("out").textContent = "network check:\n" + lines.join("\n");
 });
+// Real game paths on jsDelivr, fetched from this page. gn-math/* is 403 from jsDelivr itself on any network.
+const PATHS = [
+  "npm/jquery@3.7.1/package.json",
+  "npm/ugs-singlefiles@1.0.6/mustard.svg",
+  "gh/jquery/jquery@3.7.1/package.json",
+  "gh/mcgee1717/994894838923761723@latest/mustard.svg",
+  "gh/bubbls/ugs-singlefile@main/UGS-Files/cl2048.html",
+  "gh/freebuisness/html@main/96.html",
+  "gh/gn-math/html@main/96.html",
+  "gh/3kh0/3kh0-lite@main/index.html",
+  "gh/mochawoof/html55-new@main/embeds/moto_x3m/index.html",
+  "gh/bubblfan/jride@475e65ec2f642cf50bb80f09f4f4188cf8c26faa/h5Sdk.js",
+  "gh/selenite-cc/selenite-old@9c743188888af0986c8c7b293dbac8f9e421a4ee/retrobowl/index.html",
+  "gh/bubbls/UGS-Assets@1523e1e73e0b1c006b7e17639135d68b79f6e4d8/retro%20bowl/html5game/RetroBowl.js",
+  "gh/wnasmile/LAMAR@main/README.md",
+];
+const checkPaths = () => PATHS.forEach(path =>
+  fetch("https://cdn.jsdelivr.net/" + path, { cache: "no-store" })
+    .then(r => (r.ok ? "PASS " : "FAIL ") + r.status).catch(e => "FAIL (" + e.message + ")")
+    .then(res => postMessage({ ctx: "path", req: path, res }, "*")));
 document.getElementById("run").onclick = () => {
+  checkPaths();
   // 1. this page (larp.garden origin, larp.garden tab)
   eval(PROBE)("larp.garden page", window);
   // 2. about:blank popup written from here, like UGS does (larp.garden origin, about:blank tab)
