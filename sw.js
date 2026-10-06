@@ -9,10 +9,10 @@
 const HUBS = {
     // gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
     gnmath: { repos: ["freebuisness/html", "gn-math/html"], branch: "main",
-              // gn-math's Moto X3M pulls from repos that are gone; 3kh0-lite has a self-contained copy.
-              pages: { "96.html": "projects/motox3m/index.html" },
+              // gn-math's Moto X3M pulls from repos that are gone; this self-contained copy has all 50 levels.
+              pages: { "96.html": "embeds/moto_x3m/index.html" },
               // Only this repo has these folders; asking the others first costs a slow esm.sh 404 per file.
-              pin: { "projects/motox3m/": "3kh0/3kh0-lite" } },
+              pin: { "embeds/moto_x3m/": "mochawoof/html55-new" } },
 };
 
 // Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
