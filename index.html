@@ -61,8 +61,7 @@
             location.replace("https://" + location.host + location.pathname + location.search + location.hash);
         }
 
-        const homePage = "home.html";
-        const validTargets = ["antimatter.html", homePage, "gnmath.html"];
+        const validTargets = ["antimatter.html", "gnmath.html"];
 
         function unlockSite(targetUrl) {
             document.body.classList.add('unlocked');
@@ -76,7 +75,7 @@
         const cookie = document.cookie.split(';').find((item) => item.trim().startsWith('access_granted='));
         if (cookie) {
             let savedUrl = cookie.split('=')[1].trim();
-            if (savedUrl === "help.html") savedUrl = homePage; // cookies from before the rename
+            if (savedUrl === "help.html" || savedUrl === "home.html") savedUrl = "gnmath.html";
             if (validTargets.includes(savedUrl)) {
                 unlockSite(savedUrl);
             } else {
