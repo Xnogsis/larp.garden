@@ -79,6 +79,7 @@ esmButton.addEventListener("click", () => { const z = zones.find((z) => z.id ===
 esmNote.append(esmButton);
 document.getElementById("viewer-author").after(esmNote);
 
+let gameFile = "";
 function openZone(zone) {
     if (zone.url.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
     document.getElementById("viewer-title").textContent = zone.name;
@@ -87,7 +88,8 @@ function openZone(zone) {
     esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
-    const url = "/hub/gnmath/" + zone.url.replace("{HTML_URL}/", "");
+    gameFile = zone.url.replace("{HTML_URL}/", "");
+    const url = "/hub/gnmath/" + gameFile;
     note("open", zone.id + " " + url);
     frame.src = url;
     frame.title = zone.name;
@@ -105,6 +107,8 @@ document.getElementById("close").addEventListener("click", () => {
 document.getElementById("fullscreen").addEventListener("click", () => frame.requestFullscreen && frame.requestFullscreen());
 // Hub pages bounce out when not framed, so the new tab gets this viewer, which reopens ?id=.
 document.getElementById("newtab").addEventListener("click", () => window.open(location.href, "_blank"));
+// play.svg runs the game inside a jsDelivr tab, for filters that only let jsDelivr tabs load jsDelivr files. sw.js fixes don't apply there.
+document.getElementById("jsdtab").addEventListener("click", () => window.open("https://cdn.jsdelivr.net/gh/Xnogsis/larp.garden@main/play.svg#gh/freebuisness/html@main/" + gameFile, "_blank", "noopener"));
 document.getElementById("hidebar").addEventListener("click", () => viewer.classList.add("nobar"));
 document.getElementById("showbar").addEventListener("click", () => viewer.classList.remove("nobar"));
 // The new tab has our origin, so sw.js still serves the iframe; only the address bar shows about:blank.
