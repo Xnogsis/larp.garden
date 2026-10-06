@@ -1,4 +1,4 @@
-// Serves /hub/<slug>/... straight out of GitHub repos via public CDNs, so
+// Serves /hub/<slug>/... straight out of GitHub repos via esm.sh (or jsDelivr), so
 // whole static game sites run under this origin with proper MIME types.
 // `repos` lists equivalent copies (upstream + forks), tried in order.
 //
@@ -7,24 +7,12 @@
 // are trusted; a malicious commit upstream is a malicious commit here. HUB_CSP below
 // narrows what such a page can do, but cannot isolate it from the origin.
 const HUBS = {
-    umbrion:    { repos: ["EclipsarGames/Umbrion"],        branch: "main" },
-    dotgui:     { repos: ["DotLYHiyou/DotGUI"],            branch: "main" },
-    projecthub: { repos: ["IamChristianS/Project-HUB_V3"], branch: "main" },
-    cherri:     { repos: ["x8rr/cherri"],                  branch: "main" },
-    duckmath:   { repos: ["Neruvy/duckmath"],              branch: "main" },
-    lite3kh0:   { repos: ["3kh0/3kh0-lite"],               branch: "main" },
-    cmx:        { repos: ["hackz00/classroommaxxing"],     branch: "main" },
-    artclass:   { repos: ["proudparrot2/artclass-v2"],     branch: "main" },
     // gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
-    gnmath:     { repos: ["freebuisness/html", "gn-math/html"], branch: "main" },
-    // Site owner's forks of the three gn-math repos; the game pages inside still point
-    // their assets at freebuisness/gn-math, so those URLs get redirected (see REWRITE).
-    gnmirror:   { repos: ["Xnogsis/html"], branch: "main", owner: "Xnogsis" },
-    // Same repos as gnmath but everything goes through esm.sh, including the jsDelivr
-    // URLs the game pages request themselves, for networks that block jsDelivr.
-    // esm.sh reads from GitHub, so games whose upstream repo is gone get a live copy instead.
-    gnesm:      { repos: ["freebuisness/html", "gn-math/html", "3kh0/3kh0-lite"], branch: "main", esm: true,
-                  pages: { "96.html": "projects/motox3m/index.html" } },
+    gnmath: { repos: ["freebuisness/html", "gn-math/html"], branch: "main",
+              // gn-math's Moto X3M pulls from repos that are gone; 3kh0-lite has a self-contained copy.
+              pages: { "96.html": "projects/motox3m/index.html" },
+              // Only this repo has these folders; asking the others first costs a slow esm.sh 404 per file.
+              pin: { "projects/motox3m/": "3kh0/3kh0-lite" } },
 };
 
 // Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
@@ -35,15 +23,6 @@ function viaEsm(href) {
     const m = JSDELIVR_RE.exec(href);
     if (!m) return href;
     return "https://esm.sh/" + (m[1] === "gh" ? "gh/" : "") + m[2] + (m[3] ? m[3] + "&raw" : "?raw");
-}
-
-// Cross-origin URLs that a hub's pages request and that should come from that hub's
-// own copy instead. Only gn-math style hubs need this, for their assets/covers/html repos.
-const UPSTREAM_RE = /https:\/\/(?:cdn|gcore)\.jsdelivr\.net\/gh\/(?:freebuisness|gn-math)\/(assets|covers|html)@main\//g;
-function rewriteUpstream(slug, text) {
-    const owner = HUBS[slug] && HUBS[slug].owner;
-    if (!owner) return text;
-    return text.replace(UPSTREAM_RE, (_, repo) => `https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/`);
 }
 
 // bubbls/youtube-playables' ytgame.js is the real YouTube Playables SDK, which
@@ -101,22 +80,11 @@ async function fixedC3Runtime(request) {
     return new Response(body, { headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" } });
 }
 
-// Same-site front for jsDelivr (cdn-worker.js). Managed networks (schools, offices)
-// often block jsDelivr and GitHub outright but let anything under this site's own
-// domain through. It goes last: filter proxies answer it with their own 404 while it
-// is not deployed, and a 404 ends the hedged round before the real mirrors are tried.
-const SAME_SITE_CDN = "https://cdn.larp.garden";
-const viaSameSite = (href) => href.replace(/^https:\/\/[a-z]+\.jsdelivr\.net/, SAME_SITE_CDN);
-
-const ESM_MIRROR = (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`);
-const MIRRORS = [
+// Every hub file comes from esm.sh first (the one host that gets through filters that
+// block jsDelivr), then from jsDelivr.
+const SOURCES = [
+    (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`),
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
-    (r, b, p) => `https://gcore.jsdelivr.net/gh/${r}@${b}/${p}`,
-    (r, b, p) => `https://fastly.jsdelivr.net/gh/${r}@${b}/${p}`,
-    (r, b, p) => `https://testingcf.jsdelivr.net/gh/${r}@${b}/${p}`,
-    (r, b, p) => `https://raw.githubusercontent.com/${r}/${b}/${p}`,
-    (r, b, p) => `https://cdn.statically.io/gh/${r}/${b}/${p}`,
-    (r, b, p) => `${SAME_SITE_CDN}/gh/${r}@${b}/${p}`,
 ];
 
 const MIME = {
@@ -170,7 +138,7 @@ function mimeFor(path) {
 const UNFRAME_QUERY = "?unframed";
 // It also hands the page's window to the catalog's debug panel (gnmath.js lgDebug), if the parent has one.
 const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '");try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>';
-// Synchronous XHRs bypass the service worker, so esm hubs reroute those in the page.
+// Synchronous XHRs bypass the service worker, so hub pages reroute those in the page.
 const ESM_SYNC_XHR = `<script>(()=>{const JSDELIVR_RE=${JSDELIVR_RE};const viaEsm=${viaEsm};const open=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u,a,...r){if(a===false)u=viaEsm(new URL(u,document.baseURI).href);return open.call(this,m,u,a,...r)}})()</script>`;
 
 // Sent with every hub HTML page. Hub games need inline scripts, eval and CDN assets,
@@ -179,102 +147,62 @@ const ESM_SYNC_XHR = `<script>(()=>{const JSDELIVR_RE=${JSDELIVR_RE};const viaEs
 // games are served from anyway (gn-math pages do this for games hosted in other
 // repos), cannot pull workers or service workers from other origins, and cannot mix
 // in plain http.
-const HUB_CSP = "frame-ancestors 'self'; base-uri 'self' https://*.jsdelivr.net https://esm.sh https://raw.githubusercontent.com https://cdn.statically.io; worker-src 'self' blob:; upgrade-insecure-requests";
+const HUB_CSP = "frame-ancestors 'self'; base-uri 'self' https://*.jsdelivr.net https://esm.sh; worker-src 'self' blob:; upgrade-insecure-requests";
 
-// Give up on a mirror that has not answered with headers after this long.
-const MIRROR_TIMEOUT_MS = 8000;
-// Copies are hedged: the next one in preference order starts this long after the
-// previous (or as soon as the previous fails), and the first success wins, so a
-// hanging host costs at most this much.
-const HEDGE_DELAY_MS = 1500;
-// The mirror that answered most recently goes first for later requests.
-let preferredMirror = 0;
-// Whether the same-site front answered a page's own CDN request more recently than jsDelivr did.
-let preferSameSite = false;
+// Give up on a source that has not answered with headers after this long.
+const SOURCE_TIMEOUT_MS = 8000;
 
-function fetchWithTimeout(url, init, ctl) {
-    const timer = setTimeout(() => ctl.abort(), MIRROR_TIMEOUT_MS);
+function fetchWithTimeout(url, init) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), SOURCE_TIMEOUT_MS);
     return fetch(url, { ...init, referrerPolicy: "no-referrer", signal: ctl.signal }).finally(() => clearTimeout(timer));
 }
 
-// Resolves with the first usable Response from any of the equivalent URLs and the index
-// that won, or with the status they settled on. A clean 404 means the file does not
-// exist and the other copies would say the same, so it ends the round early.
-function hedged(urls, init) {
-    return new Promise((resolve) => {
-        const timers = [];
-        const controllers = [];
-        let pending = urls.length;
-        let lastStatus = 502;
-        let done = false;
-        const tried = [];
-        const settle = (res, index) => {
-            if (done) return;
-            done = true;
-            timers.forEach(clearTimeout);
-            controllers.forEach((c) => { if (!res || c !== res.ctl) c.abort(); });
-            resolve({ res: res ? res.res : { status: lastStatus }, index, tried });
-        };
-        const start = async (i) => {
-            if (done || timers[i] === null) return;
-            clearTimeout(timers[i]);
-            timers[i] = null;
-            const ctl = new AbortController();
-            controllers.push(ctl);
-            try {
-                const res = await fetchWithTimeout(urls[i], init, ctl);
-                tried.push(res.status + " " + urls[i]);
-                if (res.ok || res.type === "opaque") return settle({ res, ctl }, i);
-                lastStatus = res.status;
-                if (res.status === 404) return settle(null, -1);
-            } catch (e) { tried.push(e.name + " " + urls[i]); }
-            if (--pending === 0) settle(null, -1);
-            else if (i + 1 < urls.length) start(i + 1);
-        };
-        urls.forEach((_, i) => timers.push(setTimeout(start, i * HEDGE_DELAY_MS, i)));
-    });
-}
-
 async function fromMirrors(slug, path) {
-    const { repos, branch, owner, esm, pages } = HUBS[slug];
+    const { repos, branch, pages, pin } = HUBS[slug];
     if (pages && pages[path]) return Response.redirect("/hub/" + slug + "/" + pages[path], 302);
-    // The owner's own forks change when they sync them; do not pin those for a day.
-    const cache = owner ? "default" : "force-cache";
-    const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
     let lastStatus = 502;
     const tried = [];
-    for (const repo of repos) {
-        const order = mirrors.slice(preferredMirror).concat(mirrors.slice(0, preferredMirror));
-        const { res, index, tried: t } = await hedged(order.map((build) => build(repo, branch, path)), { cache });
-        tried.push(...t);
-        if (res.ok) {
-            preferredMirror = mirrors.indexOf(order[index]);
+    const pinned = pin && Object.keys(pin).find((dir) => path.startsWith(dir));
+    for (const repo of pinned ? [pin[pinned]] : repos) {
+        let res = null;
+        for (const build of SOURCES) {
+            const url = build(repo, branch, path);
+            try {
+                res = await fetchWithTimeout(url, { cache: "force-cache" });
+                tried.push(res.status + " " + url);
+                if (res.ok) break;
+            } catch (e) {
+                tried.push(e.name + " " + url);
+            }
+        }
+        if (res && res.ok) {
             const headers = new Headers();
             const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
             headers.set("Content-Type", mime);
-            headers.set("Cache-Control", owner ? "public, max-age=3600" : "public, max-age=86400");
+            headers.set("Cache-Control", "public, max-age=86400");
             let body = res.body;
             if (mime === "text/html") {
                 headers.set("Content-Security-Policy", HUB_CSP);
                 headers.set("X-Content-Type-Options", "nosniff");
                 // Hub pages must keep sending a full referrer, or their root-relative
                 // links can't be routed back to the hub.
-                body = rewriteUpstream(slug, (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, ""));
+                body = (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, "");
                 // Draw Climber's egret build draws nothing on some WebGL/ANGLE drivers
                 // (black canvas, no errors). Its 2D canvas renderer paints correctly.
                 if (body.includes("yrgen73/draw-cl")) {
                     body = body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"');
                 }
-                const inject = esm ? STAY_FRAMED + ESM_SYNC_XHR : STAY_FRAMED;
+                const inject = STAY_FRAMED + ESM_SYNC_XHR;
                 body = /<head[^>]*>/i.test(body)
                     ? body.replace(/<head[^>]*>/i, (tag) => tag + inject)
                     : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + inject);
             }
             return new Response(body, { status: 200, headers });
         }
-        lastStatus = res.status;
+        if (res) lastStatus = res.status;
     }
-    // Listed so a user without devtools can paste which mirror answered what (AbortError = cut off or timed out).
+    // Listed so a user without devtools can paste which source answered what (AbortError = cut off or timed out).
     return new Response("Not found: " + slug + "/" + path + "\n\n" + tried.join("\n"), { status: lastStatus, headers: { "Content-Type": "text/plain" } });
 }
 
@@ -282,8 +210,7 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(event.request.url);
     if (event.request.method !== "GET") return;
 
-    // Game scripts build asset URLs at runtime too, so upstream requests from a
-    // hub with its own copy are pointed at that copy (the HTML was rewritten already).
+    // Game scripts request jsDelivr files themselves; those go through esm.sh too.
     if (url.origin !== self.location.origin) {
         if (BROKEN_C3_RE.test(url.href)) {
             event.respondWith(fixedC3Runtime(event.request).catch(() => fetch(event.request)));
@@ -297,24 +224,15 @@ self.addEventListener("fetch", (event) => {
             return;
         }
         event.respondWith((async () => {
-            const slug = await hubFromClient(event);
-            const target = slug ? rewriteUpstream(slug, url.href) : url.href;
             const req = event.request;
             const init = req.mode === "navigate"
                 ? {}
                 : { mode: req.mode, credentials: req.credentials, headers: req.headers, redirect: req.redirect };
-            if (slug && HUBS[slug].esm) {
-                try {
-                    const res = await fetch(viaEsm(target), init);
-                    if (res.ok || res.type === "opaque") return res;
-                } catch (_) { /* fall back to the original */ }
-                return fetch(req);
-            }
-            const urls = preferSameSite ? [viaSameSite(target), target] : [target, viaSameSite(target)];
-            const { res, index } = await hedged(urls, init);
-            if (!(res instanceof Response)) return fetch(req);
-            preferSameSite = urls[index] !== target;
-            return res;
+            try {
+                const res = await fetch(viaEsm(url.href), init);
+                if (res.ok || res.type === "opaque") return res;
+            } catch (_) { /* fall back to the original */ }
+            return fetch(req);
         })());
         return;
     }

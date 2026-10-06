@@ -17,7 +17,7 @@
     <p id="status">Loading the game list...</p>
     <ul id="grid"></ul>
     <footer>
-        Games and covers are pulled from gn-math's public GitHub repos (and a mirror of them), not hosted here.
+        Games and covers are pulled from gn-math's public GitHub repos, not hosted here.
         Each game belongs to the author shown on its page.
     </footer>
 
@@ -35,15 +35,12 @@
         <iframe id="frame" title="Game" allow="fullscreen; autoplay; gamepad"></iframe>
     </div>
 
-    <!-- gn-math's own org is blocked on jsDelivr; the freebuisness fork tracks it and is not.
-         sw.js uses the same repos for the game files themselves (hub "gnmath"). -->
+    <!-- esm.sh gets through filters that block jsDelivr. gn-math's own org is blocked on jsDelivr;
+         the freebuisness fork tracks it. sw.js uses the same repos for the game files (hub "gnmath"). -->
     <script src="gnmath.js" data-hub="gnmath" data-title="gn-math" data-sources="
+        https://esm.sh/gh/freebuisness/
+        https://esm.sh/gh/gn-math/
         https://cdn.jsdelivr.net/gh/freebuisness/
-        https://raw.githubusercontent.com/gn-math/
-        https://gcore.jsdelivr.net/gh/freebuisness/
-        https://fastly.jsdelivr.net/gh/freebuisness/
-        https://testingcf.jsdelivr.net/gh/freebuisness/
-        https://raw.githubusercontent.com/freebuisness/
     "></script>
 </body>
 </html>
