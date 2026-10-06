@@ -167,6 +167,7 @@ async function fromMirrors(slug, path) {
     const { repos, branch, pages, pin } = HUBS[slug];
     if (pages && pages[path]) return Response.redirect("/hub/" + slug + "/" + pages[path], 302);
     let lastStatus = 502;
+    let unreached = false;
     const tried = [];
     const pinned = pin && Object.keys(pin).find((dir) => path.startsWith(dir));
     for (const repo of pinned ? [pin[pinned]] : repos) {
@@ -206,9 +207,10 @@ async function fromMirrors(slug, path) {
             return new Response(body, { status: 200, headers });
         }
         if (res) lastStatus = res.status;
+        else unreached = true;
     }
     // Listed so a user without devtools can paste which source answered what (AbortError = cut off or timed out).
-    return new Response("Not found: " + slug + "/" + path + "\n\n" + tried.join("\n"), { status: lastStatus, headers: { "Content-Type": "text/plain" } });
+    return new Response("Not found: " + slug + "/" + path + "\n\n" + tried.join("\n"), { status: unreached ? 502 : lastStatus, headers: { "Content-Type": "text/plain" } });
 }
 
 self.addEventListener("fetch", (event) => {

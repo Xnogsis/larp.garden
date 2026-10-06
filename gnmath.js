@@ -88,7 +88,8 @@ function openZone(zone) {
     esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
-    // A few catalog entries point at renamed files; the plain "<id>.html" usually still exists.
+    // A few catalog entries point at renamed files; only a 4xx confirms one is missing.
+    // Network failures and timeouts leave the catalog file's own error visible.
     // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
     // right away while probes decide whether to swap in the fallback. The fallback is probed
     // too, so a failed load keeps showing the catalog file's own error instead of a missing "<id>.html".
@@ -97,8 +98,8 @@ function openZone(zone) {
     const found = (u) => fetch(u).then((r) => r.ok, () => false);
     note("open", zone.id + " " + url);
     frame.src = url;
-    found(url).then(async (ok) => {
-        if (ok || url === fallback || !(await found(fallback))) return;
+    fetch(url).then((r) => r.status >= 400 && r.status < 500, () => false).then(async (missing) => {
+        if (!missing || url === fallback || !(await found(fallback))) return;
         if (frame.src !== new URL(url, location.href).href) return;
         note("open", zone.id + " " + fallback + " (catalog file missing)");
         frame.src = fallback;
