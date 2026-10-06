@@ -22,7 +22,10 @@ const PROBE = `(async (ctx, to) => {
   .then(r => (r.ok ? "PASS " : "FAIL ") + r.status).catch(e => "FAIL (" + e.message + ")")));
  send("script tag jsDelivr", await t(new Promise(r => { const s = document.createElement("script");
   s.src = "https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js?" + Math.random();
-  s.onload = () => r("PASS"); s.onerror = () => r("FAIL (load error)"); document.head.appendChild(s); })));
+  s.onload = () => r(window.jQuery ? "PASS (ran)" : "FAIL (loaded, didn't run)"); s.onerror = () => r("FAIL (load error)"); document.head.appendChild(s); })));
+ send("image jsDelivr", await t(new Promise(r => { const i = new Image();
+  i.onload = () => r(i.naturalWidth ? "PASS (" + i.naturalWidth + "px)" : "FAIL (empty)"); i.onerror = () => r("FAIL (load error)");
+  i.src = "https://cdn.jsdelivr.net/npm/@mdi/svg@7.4.47/svg/home.svg?" + Math.random(); })));
  send("fetch esm.sh", await t(fetch("https://esm.sh/jquery@3.7.1/package.json", { cache: "no-store" })
   .then(r => (r.ok ? "PASS " : "FAIL ") + r.status).catch(e => "FAIL (" + e.message + ")")));
 })`;
