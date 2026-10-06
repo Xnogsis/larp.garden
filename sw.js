@@ -24,7 +24,9 @@ const HUBS = {
     // URLs the game pages request themselves, for networks that block jsDelivr.
     // esm.sh reads from GitHub, so games whose upstream repo is gone get a live copy instead.
     gnesm:      { repos: ["freebuisness/html", "gn-math/html", "3kh0/3kh0-lite"], branch: "main", esm: true,
-                  pages: { "96.html": "projects/motox3m/index.html" } },
+                  pages: { "96.html": "projects/motox3m/index.html" },
+                  // Only this repo has these folders; asking the others first costs a slow esm.sh 404 per file.
+                  pin: { "projects/motox3m/": "3kh0/3kh0-lite" } },
 };
 
 // Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
@@ -236,14 +238,15 @@ function hedged(urls, init) {
 }
 
 async function fromMirrors(slug, path) {
-    const { repos, branch, owner, esm, pages } = HUBS[slug];
+    const { repos, branch, owner, esm, pages, pin } = HUBS[slug];
     if (pages && pages[path]) return Response.redirect("/hub/" + slug + "/" + pages[path], 302);
     // The owner's own forks change when they sync them; do not pin those for a day.
     const cache = owner ? "default" : "force-cache";
     const mirrors = esm ? [ESM_MIRROR] : MIRRORS;
     let lastStatus = 502;
     const tried = [];
-    for (const repo of repos) {
+    const pinned = pin && Object.keys(pin).find((dir) => path.startsWith(dir));
+    for (const repo of pinned ? [pin[pinned]] : repos) {
         const order = mirrors.slice(preferredMirror).concat(mirrors.slice(0, preferredMirror));
         const { res, index, tried: t } = await hedged(order.map((build) => build(repo, branch, path)), { cache });
         tried.push(...t);
