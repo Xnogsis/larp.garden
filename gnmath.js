@@ -3,10 +3,8 @@
 const HUB = document.currentScript.dataset.hub;
 const TITLE = document.currentScript.dataset.title || HUB;
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
-// jsDelivr and esm.sh use "repo@ref/path", raw.githubusercontent uses "repo/ref/path".
 // esm.sh rewrites .js files into ES modules unless asked for the raw file.
-const at = (src, repo, path) => src.includes("raw.githubusercontent") ? src + repo + "/main/" + path
-    : src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
+const at = (src, repo, path) => src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
 
 const grid = document.getElementById("grid");
 const status = document.getElementById("status");
@@ -70,15 +68,15 @@ function render(filter) {
     count.textContent = shown.length + " of " + zones.length;
 }
 
-// Retro Bowl's files come from jsDelivr; the esm.sh hub still loads them on networks that block it.
-// College's come from a repo esm.sh refuses to serve, so it points at plain Retro Bowl instead.
-const ESM_NOTES = { 33: [33, "open in esm.sh option"], 34: [33, "play Retro Bowl in esm.sh option"] };
+// Retro Bowl College's files come from a repo esm.sh refuses to serve, so on networks
+// that block jsDelivr it stays black; plain Retro Bowl loads.
+const ESM_NOTES = { 34: [33, "play Retro Bowl"] };
 const esmNote = document.createElement("span");
 esmNote.hidden = true;
 esmNote.textContent = "Black screen? Your network may block jsDelivr. ";
 const esmButton = document.createElement("button");
 esmButton.type = "button";
-esmButton.addEventListener("click", () => { location.href = "gnesm.html?id=" + esmNote.dataset.id; });
+esmButton.addEventListener("click", () => { const z = zones.find((z) => z.id === +esmNote.dataset.id); if (z) openZone(z); });
 esmNote.append(esmButton);
 document.getElementById("viewer-author").after(esmNote);
 
@@ -87,7 +85,7 @@ function openZone(zone) {
     document.getElementById("viewer-title").textContent = zone.name;
     document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
     const [esmId, esmLabel] = ESM_NOTES[zone.id] || [];
-    esmNote.hidden = !esmId || (HUB === "gnesm" && esmId === zone.id);
+    esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
     // A few catalog entries point at renamed files; the plain "<id>.html" usually still exists.
