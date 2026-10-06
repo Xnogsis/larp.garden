@@ -209,6 +209,14 @@ debugBtn.addEventListener("click", () => {
 });
 document.getElementById("fullscreen").before(debugBtn);
 
+const themeBtn = document.getElementById("theme");
+const paintTheme = () => { themeBtn.textContent = document.documentElement.classList.contains("dark") ? "Light" : "Dark"; };
+themeBtn.addEventListener("click", () => {
+    if (document.documentElement.classList.toggle("dark")) localStorage.theme = "dark"; else localStorage.removeItem("theme");
+    paintTheme();
+});
+paintTheme();
+
 let searchTimer;
 search.addEventListener("input", () => {
     clearTimeout(searchTimer);

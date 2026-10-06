@@ -4,22 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gn-math</title>
-    <link rel="stylesheet" href="gnmath.css">
+    <link rel="stylesheet" href="style.css">
     <script>if (localStorage.theme === "dark") document.documentElement.classList.add("dark");</script>
 </head>
 <body>
-    <h1>gn-math <span>/ mirrored catalog</span></h1>
-    <div id="bar">
-        <input id="search" type="search" placeholder="Search games" autocomplete="off">
-        <span id="count"></span>
-        <a href="home.html">back to home</a>
-    </div>
-    <p id="status">Loading the game list...</p>
-    <ul id="grid"></ul>
-    <footer>
-        Games and covers are pulled from gn-math's public GitHub repos, not hosted here.
-        Each game belongs to the author shown on its page.
-    </footer>
+    <header id="top">
+        <a class="brand" href="home.html">larp.garden</a>
+        <nav><a href="home.html">Home</a><a href="gnmath.html" aria-current="page">Games</a></nav>
+        <button type="button" id="theme">Dark</button>
+    </header>
+    <main>
+        <h1>gn-math</h1>
+        <div id="bar">
+            <input id="search" type="search" placeholder="Search games" autocomplete="off" aria-label="Search games">
+            <span id="count"></span>
+        </div>
+        <p id="status">Loading the game list...</p>
+        <ul id="grid"></ul>
+        <footer>
+            Games and covers are pulled from gn-math's public GitHub repos, not hosted here.
+            Each game belongs to the author shown on its page.
+        </footer>
+    </main>
 
     <div id="viewer">
         <div id="viewer-bar">

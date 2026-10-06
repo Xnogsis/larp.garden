@@ -5,209 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>larp.garden / home</title>
     <script>if (localStorage.theme === "dark") document.documentElement.classList.add("dark");</script>
-    <style>
-        html { background: #fff; }
-        body {
-            margin: 0;
-            padding: 32px 16px 64px;
-            color: #000;
-            font-family: "Times New Roman", Times, serif;
-            font-size: 17px;
-            line-height: 1.45;
-            max-width: 640px;
-        }
-        h1 {
-            font-size: 17px;
-            font-weight: normal;
-            margin: 0 0 40px;
-        }
-        h1 span { color: #777; }
-        h2 {
-            font-size: 17px;
-            font-weight: bold;
-            margin: 48px 0 8px;
-            padding-top: 8px;
-            border-top: 1px solid #000;
-        }
-        p { margin: 0 0 12px; }
-        a { color: #000; }
-        a:hover { background: #000; color: #fff; text-decoration: none; }
-
-        #garfield {
-            margin: 0 0 40px;
-            border: 1px solid #000;
-            padding: 8px;
-        }
-        #garfield img {
-            display: block;
-            width: 100%;
-            height: auto;
-            background: #eee;
-        }
-        #garfield-caption {
-            margin: 6px 0 0;
-            color: #555;
-            font-size: 15px;
-        }
-        #garfield.failed { padding: 8px 12px; color: #555; }
-
-        .page-list { margin: 0; padding: 0; list-style: none; }
-        .page-link {
-            display: block;
-            padding: 14px 16px;
-            margin: 0 0 8px;
-            border: 2px solid #000;
-            color: #000;
-            text-decoration: none;
-        }
-        .page-link:hover, .page-link:focus { background: #000; color: #fff; outline: none; }
-        .page-link b {
-            display: block;
-            font-size: 26px;
-            line-height: 1.1;
-        }
-        .page-link small {
-            display: block;
-            margin-top: 4px;
-            font-size: 15px;
-            color: #555;
-        }
-        .page-link:hover small, .page-link:focus small { color: #ccc; }
-        .page-link .arrow { float: right; font-size: 26px; }
-        .mirror-link { margin-left: 20px; border-width: 1px; }
-        .mirror-link b { font-size: 19px; }
-        code, kbd {
-            font-family: "Courier New", Courier, monospace;
-            font-size: 15px;
-        }
-        kbd {
-            border: 1px solid #000;
-            padding: 0 4px;
-        }
-        ol { padding-left: 1.4em; margin: 0 0 12px; }
-        li { margin-bottom: 6px; }
-        button {
-            font: inherit;
-            background: #fff;
-            color: #000;
-            border: 1px solid #000;
-            padding: 2px 10px;
-            cursor: pointer;
-        }
-        button:hover { background: #000; color: #fff; }
-        #forget-note { color: #555; margin-left: 8px; }
-        footer {
-            margin-top: 64px;
-            color: #555;
-            font-size: 15px;
-        }
-        #theme { float: right; }
-        #contact {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 240px;
-            margin: 0;
-            padding: 10px 14px 12px;
-            background: #ffffe0;
-            border: 2px solid #000;
-            box-shadow: 4px 4px 0 #000;
-            font-size: 15px;
-            line-height: 1.35;
-        }
-        #contact b { display: block; margin-bottom: 4px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; }
-        #contact a { font-family: "Courier New", Courier, monospace; word-break: break-all; }
-        @media (max-width: 960px) {
-            #contact { position: static; width: auto; margin-top: 32px; }
-        }
-        html.dark #contact { background: #222; border-color: #eee; box-shadow: 4px 4px 0 #eee; }
-        html.dark { background: #111; }
-        html.dark body, html.dark a, html.dark .page-link, html.dark button, html.dark kbd, html.dark #garfield { color: #eee; border-color: #eee; }
-        html.dark button { background: #111; }
-        html.dark h2 { border-color: #eee; }
-        html.dark a:hover, html.dark .page-link:hover, html.dark .page-link:focus, html.dark button:hover { background: #eee; color: #111; }
-        html.dark .page-link small { color: #aaa; }
-        html.dark .page-link:hover small, html.dark .page-link:focus small { color: #444; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <header id="top">
+        <a class="brand" href="home.html">larp.garden</a>
+        <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a></nav>
+        <button type="button" id="theme">Dark</button>
+    </header>
 
-    <h1>larp.garden <span>/ home</span> <button type="button" id="theme">dark mode</button></h1>
+    <main class="home">
+        <div>
+            <section>
+                <h1>Games</h1>
+                <p class="lede">Whatever you open last is saved, so next visit the 404 page goes straight to it.</p>
+            </section>
 
-    <div id="garfield">
-        <a id="garfield-link" href="https://www.gocomics.com/garfield" target="_blank" rel="noopener"><img id="garfield-img" alt="Today's Garfield strip"></a>
-        <p id="garfield-caption">Loading today's Garfield...</p>
-    </div>
+            <section>
+                <ul class="page-list">
+                    <li><a class="page-link" href="gnmath.html"><b>gn-math</b><small>800+ browser games, searchable.</small><span class="arrow">&rarr;</span></a></li>
+                    <li><a class="page-link" href="antimatter.html"><b>Antimatter Dimensions</b><small>A game about huge numbers and watching them go up.</small><span class="arrow">&rarr;</span></a></li>
+                </ul>
+            </section>
 
-    <p>
-        This site pretends to be a broken nginx page. Press any key on the 404 screen and you get here.
-        Pick a hub or game below and it gets saved in a cookie, so next time you land on it straight away.
-    </p>
+            <footer>
+                Built and run by xnogsis. Games belong to their authors: gn-math (gn-math / freebuisness), Moto X3M from 3kh0 lite,
+                Antimatter Dimensions by IvarK. Nothing is hosted here; it is fetched from their public repos through esm.sh, with jsDelivr as a backup.
+            </footer>
+        </div>
 
-    <h2>Game hub</h2>
-    <p>
-        Pulled live from the gn-math GitHub repos through esm.sh (jsDelivr as a backup).
-        First open of a game can take a moment while it caches.
-    </p>
-    <ul class="page-list">
-        <li>
-            <a class="page-link" href="gnmath.html"><span class="arrow">&rarr;</span><b><span role="img" aria-label="Recommended">&#9733;</span> gn-math</b><small>800+ games.</small></a>
-        </li>
-    </ul>
+        <aside>
+            <div id="garfield">
+                <a id="garfield-link" href="https://www.gocomics.com/garfield" target="_blank" rel="noopener"><img id="garfield-img" alt="Today's Garfield strip"></a>
+                <p id="garfield-caption">Loading today's Garfield...</p>
+            </div>
 
-    <h2>Single games</h2>
-    <ul class="page-list">
-        <li><a class="page-link" href="antimatter.html"><span class="arrow">&rarr;</span><b>Antimatter Dimensions</b><small>A game about huge numbers and watching them go up.</small></a></li>
-    </ul>
-    <p style="margin-top:12px;color:#555">Clicking any hub or game saves it as your default page. Come back here with the button below.</p>
+            <div id="contact">
+                <h2>Something broken?</h2>
+                <p>Broken games, game suggestions, recommendations or other issues? Email me and I'll fix it.</p>
+                <p><a href="mailto:detacopablo@gmail.com">detacopablo@gmail.com</a></p>
+            </div>
 
-    <h2>Going back to the 404 page</h2>
-    <p>
-        Once a page is saved, the site opens straight to it. To get back to the plain 404 screen
-        (so you can pick a different page, or so nobody looking over your shoulder sees anything), the cookie has to go.
-    </p>
-    <p>Quickest way, from here:</p>
-    <p>
-        <button type="button" id="forget">Forget my saved page</button>
-        <span id="forget-note"></span>
-    </p>
-    <p>
-        If a hub gets stuck loading or shows an old version after its files changed, this throws away everything the
-        game loader has cached (saved games are kept):
-    </p>
-    <p>
-        <button type="button" id="reset-loader">Reset game loader</button>
-        <span id="reset-note"></span>
-    </p>
-    <p>Or clear the cookie in Google Chrome by hand:</p>
-    <ol>
-        <li>Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Delete</kbd> (Mac: <kbd>&#8984;</kbd>+<kbd>Shift</kbd>+<kbd>Delete</kbd>). The "Delete browsing data" window opens.</li>
-        <li>Set the time range to <i>All time</i>.</li>
-        <li>Tick <i>Cookies and other site data</i>. You can untick everything else.</li>
-        <li>Click <i>Delete data</i>, then reload this site. You should see "404 Not Found" again.</li>
-    </ol>
-    <p>
-        To delete the cookie for this site only, instead of every site: click the icon left of the address bar,
-        choose <i>Cookies and site data</i>, then <i>Manage on-device site data</i>, and hit the trash can next to this domain.
-    </p>
-    <p style="color:#555">
-        Note: on a managed school or work Laptop the clear-data screen is sometimes locked by policy. The buttons above still work.
-    </p>
-
-    <h2>Credits</h2>
-    <p>Built and run by <b>xnogsis</b>.</p>
-    <p style="color:#555">
-        Game pages belong to their respective authors: Antimatter Dimensions by IvarK.
-        Hub: gn-math (gn-math / freebuisness), with Moto X3M from 3kh0 lite by 3kh0. Nothing from them is hosted here; it is fetched from their public repos.
-    </p>
-
-    <aside id="contact">
-        <b>Something broken?</b>
-        Broken games, game suggestions, recommendations or other issues? Contact me at
-        <a href="mailto:detacopablo@gmail.com">detacopablo@gmail.com</a> and I'll fix it.
-    </aside>
-
-    <footer>You are on the home page. To leave, pick a page above, or hit "Forget my saved page", reload, and press any key.</footer>
+            <div class="tools">
+                <h2>Tools</h2>
+                <p><button type="button" id="forget">Forget my saved page</button><span id="forget-note"></span></p>
+                <p><button type="button" id="reset-loader">Reset game loader</button><span id="reset-note"></span></p>
+                <p class="muted">Reset if a game is stuck loading or shows an old version. Saved games are kept.</p>
+            </div>
+        </aside>
+    </main>
 
     <script>
         const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
@@ -227,11 +73,6 @@
                 garfieldBox.textContent = 'No Garfield today. The daily fetch did not run, or garfield.json is missing.';
             });
 
-        // Arriving here from a hub's "back to home" link: make refresh land on home, not the hub.
-        if (top !== self && document.cookie.includes('access_granted=')) {
-            document.cookie = "access_granted=home.html; max-age=" + COOKIE_MAX_AGE + "; path=/";
-        }
-
         document.querySelectorAll('a.page-link').forEach((link) => {
             link.addEventListener('click', () => {
                 document.cookie = "access_granted=" + link.getAttribute('href') + "; max-age=" + COOKIE_MAX_AGE + "; path=/";
@@ -248,14 +89,14 @@
                 if ('caches' in window) {
                     for (const k of await caches.keys()) await caches.delete(k);
                 }
-                note.textContent = "Done. Open a hub again and it will load fresh.";
+                note.textContent = "Done. Games will load fresh.";
             } catch (e) {
                 note.textContent = "Could not reset: " + e.message;
             }
         });
 
         const themeBtn = document.getElementById('theme');
-        const paintTheme = () => { themeBtn.textContent = document.documentElement.classList.contains('dark') ? 'light mode' : 'dark mode'; };
+        const paintTheme = () => { themeBtn.textContent = document.documentElement.classList.contains('dark') ? 'Light' : 'Dark'; };
         themeBtn.addEventListener('click', () => {
             const dark = document.documentElement.classList.toggle('dark');
             if (dark) localStorage.theme = 'dark'; else localStorage.removeItem('theme');
