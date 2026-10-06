@@ -18,11 +18,12 @@ const HUBS = {
 // Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
 // under /gh/ with the same "repo@ref/path" layout and npm files at the root as
 // "pkg@ver/path". "?raw" stops esm.sh from turning .js files into ES modules.
+// Some school filters' proxy scripts choke on a raw ' in a URL, so it goes out as %27.
 const JSDELIVR_RE = /^https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/(gh|npm)\/([^?#]+)(\?[^#]*)?/;
 function viaEsm(href) {
     const m = JSDELIVR_RE.exec(href);
     if (!m) return href;
-    return "https://esm.sh/" + (m[1] === "gh" ? "gh/" : "") + m[2] + (m[3] ? m[3] + "&raw" : "?raw");
+    return ("https://esm.sh/" + (m[1] === "gh" ? "gh/" : "") + m[2] + (m[3] ? m[3] + "&raw" : "?raw")).replace(/'/g, "%27");
 }
 
 // bubbls/youtube-playables' ytgame.js is the real YouTube Playables SDK, which
