@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>network check</title>
+<link rel="stylesheet" href="style.css">
+<style>
+ main{max-width:760px;margin:24px auto;padding:0 16px}
+ table{border-collapse:collapse;width:100%;margin:12px 0}
+ th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+ pre{white-space:pre-wrap;font:12px var(--mono);border:1px solid var(--line);padding:10px}
+</style></head><body><main>
+<h1>network check</h1>
+<p>Loads the same jsDelivr file from different kinds of page to see which ones your network lets through. Press <b>Run</b>, allow the popup if asked, wait for it to finish, then press <b>Copy results</b> and paste them back.</p>
+<p><button id="run">Run</button> <button id="copy">Copy results</button> <span id="status"></span></p>
+<table><thead><tr><th>where</th><th>request</th><th>result</th></tr></thead><tbody id="t"></tbody></table>
+<pre id="out"></pre>
+<script>
+// Runs inside each context and posts one message per result.
+const PROBE = `(async (ctx, to) => {
+ const send = (req, res) => (to || (window.parent !== window ? parent : opener)).postMessage({ ctx, req, res }, "*");
+ const t = p => Promise.race([p, new Promise(r => setTimeout(() => r("FAIL (timeout)"), 8000))]);
+ send("fetch jsDelivr", await t(fetch("https://cdn.jsdelivr.net/npm/jquery@3.7.1/package.json", { cache: "no-store" })
+  .then(r => (r.ok ? "PASS " : "FAIL ") + r.status).catch(e => "FAIL (" + e.message + ")")));
+ send("script tag jsDelivr", await t(new Promise(r => { const s = document.createElement("script");
+  s.src = "https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js?" + Math.random();
+  s.onload = () => r("PASS"); s.onerror = () => r("FAIL (load error)"); document.head.appendChild(s); })));
+ send("fetch esm.sh", await t(fetch("https://esm.sh/jquery@3.7.1/package.json", { cache: "no-store" })
+  .then(r => (r.ok ? "PASS " : "FAIL ") + r.status).catch(e => "FAIL (" + e.message + ")")));
+})`;
+const html = ctx => "<!doctype html><script>" + PROBE + "(" + JSON.stringify(ctx) + ")<\/script>";
+const lines = [];
+addEventListener("message", ({ data }) => {
+  if (!data || !data.ctx) return;
+  const tr = document.createElement("tr");
+  for (const v of [data.ctx, data.req, data.res]) tr.insertCell().textContent = v;
+  document.getElementById("t").appendChild(tr);
+  lines.push(`${data.ctx}: ${data.req}`.padEnd(40) + data.res); lines.sort();
+  document.getElementById("out").textContent = "network check:\n" + lines.join("\n");
+});
+document.getElementById("run").onclick = () => {
+  // 1. this page (larp.garden origin, larp.garden tab)
+  eval(PROBE)("larp.garden page", window);
+  // 2. about:blank popup written from here, like UGS does (larp.garden origin, about:blank tab)
+  const w = open("about:blank", "_blank");
+  if (w) { w.document.open(); w.document.write(html("about:blank popup")); w.document.close(); }
+  else lines.push("popup blocked");
+  // 3. sandboxed iframe (no origin, larp.garden tab)
+  const sb = document.createElement("iframe");
+  sb.sandbox = "allow-scripts"; sb.srcdoc = html("sandboxed iframe"); sb.hidden = true;
+  // 4. data: iframe (no origin, larp.garden tab)
+  const du = document.createElement("iframe");
+  du.src = "data:text/html," + encodeURIComponent(html("data: iframe")); du.hidden = true;
+  document.body.append(sb, du);
+  document.getElementById("status").textContent = "running…";
+};
+document.getElementById("copy").onclick = () => navigator.clipboard.writeText(document.getElementById("out").textContent)
+  .then(() => document.getElementById("status").textContent = "copied");
+// Run uncontrolled so sw.js doesn't reroute jsDelivr.
+navigator.serviceWorker && navigator.serviceWorker.getRegistrations()
+  .then(rs => Promise.all(rs.map(r => r.unregister())))
+  .then(() => { if (navigator.serviceWorker.controller) location.reload(); });
+</script></main></body></html>
