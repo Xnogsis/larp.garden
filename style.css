@@ -144,12 +144,7 @@ aside p:last-child { margin-bottom: 0; }
 #contact a { font-family: var(--mono); font-size: 13px; word-break: break-all; }
 .tools p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .tools span { color: var(--muted); font-size: 13px; }
-details { border-top: 1px solid var(--line); padding-top: 12px; }
-summary { cursor: pointer; font-weight: 600; }
-details[open] summary { margin-bottom: 8px; }
-details ol { padding-left: 1.4em; margin: 0 0 12px; }
-details li { margin-bottom: 4px; }
-kbd { font: 12px var(--mono); border: 1px solid var(--line); padding: 0 4px; }
+
 @media (max-width: 860px) {
     .home { grid-template-columns: 1fr; gap: 40px; }
     #top { padding: 0 16px; gap: 16px; }
