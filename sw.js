@@ -142,6 +142,10 @@ const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY 
 // Synchronous XHRs bypass the service worker, so hub pages reroute those in the page.
 const ESM_SYNC_XHR = `<script>(()=>{const JSDELIVR_RE=${JSDELIVR_RE};const viaEsm=${viaEsm};const open=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u,a,...r){if(a===false)u=viaEsm(new URL(u,document.baseURI).href);return open.call(this,m,u,a,...r)}})()</script>`;
 
+// Some engines (e.g. Bowmasters' PixiJS) ask for failIfMajorPerformanceCaveat, so on
+// software-rendered GPUs (Microsoft Basic Render Driver) they get no WebGL and draw nothing.
+const ALLOW_SLOW_WEBGL = `<script>(()=>{const g=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,o){if(o&&o.failIfMajorPerformanceCaveat)o={...o,failIfMajorPerformanceCaveat:false};return g.call(this,t,o)}})()</script>`;
+
 // Sent with every hub HTML page. Hub games need inline scripts, eval and CDN assets,
 // so script/connect sources stay open; this pins down the rest: pages can only be
 // framed by this site, can only retarget relative URLs with <base> at the CDNs the
@@ -195,7 +199,7 @@ async function fromMirrors(slug, path) {
                 if (body.includes("yrgen73/draw-cl")) {
                     body = body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"');
                 }
-                const inject = STAY_FRAMED + ESM_SYNC_XHR;
+                const inject = STAY_FRAMED + ESM_SYNC_XHR + ALLOW_SLOW_WEBGL;
                 body = /<head[^>]*>/i.test(body)
                     ? body.replace(/<head[^>]*>/i, (tag) => tag + inject)
                     : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + inject);

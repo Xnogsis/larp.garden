@@ -91,12 +91,18 @@ function openZone(zone) {
     // A few catalog entries point at renamed files; only a 4xx confirms one is missing.
     // Network failures and timeouts leave the catalog file's own error visible.
     // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
-    // right away while a probe of the same URL checks whether the file is missing.
+    // right away while probes decide whether to swap in the fallback. The fallback is probed
+    // too, so a failed load keeps showing the catalog file's own error instead of a missing "<id>.html".
     const url = "/hub/" + HUB + "/" + zone.url.replace("{HTML_URL}/", "");
+    const fallback = "/hub/" + HUB + "/" + zone.id + ".html";
+    const found = (u) => fetch(u).then((r) => r.ok, () => false);
     note("open", zone.id + " " + url);
     frame.src = url;
-    fetch(url).then((r) => r.status >= 400 && r.status < 500, () => false).then((missing) => {
-        if (missing && frame.src === new URL(url, location.href).href) frame.src = "/hub/" + HUB + "/" + zone.id + ".html";
+    fetch(url).then((r) => r.status >= 400 && r.status < 500, () => false).then(async (missing) => {
+        if (!missing || url === fallback || !(await found(fallback))) return;
+        if (frame.src !== new URL(url, location.href).href) return;
+        note("open", zone.id + " " + fallback + " (catalog file missing)");
+        frame.src = fallback;
     });
     frame.title = zone.name;
     viewer.classList.add("open");
