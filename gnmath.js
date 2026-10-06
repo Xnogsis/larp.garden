@@ -88,14 +88,15 @@ function openZone(zone) {
     esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
-    // A few catalog entries point at renamed files; the plain "<id>.html" usually still exists.
+    // A few catalog entries point at renamed files; only a 4xx confirms one is missing.
+    // Network failures and timeouts leave the catalog file's own error visible.
     // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
-    // right away while a probe of the same URL decides whether to swap in the fallback.
+    // right away while a probe of the same URL checks whether the file is missing.
     const url = "/hub/" + HUB + "/" + zone.url.replace("{HTML_URL}/", "");
     note("open", zone.id + " " + url);
     frame.src = url;
-    fetch(url).then((r) => r.ok, () => false).then((ok) => {
-        if (!ok && frame.src === new URL(url, location.href).href) frame.src = "/hub/" + HUB + "/" + zone.id + ".html";
+    fetch(url).then((r) => r.status >= 400 && r.status < 500, () => false).then((missing) => {
+        if (missing && frame.src === new URL(url, location.href).href) frame.src = "/hub/" + HUB + "/" + zone.id + ".html";
     });
     frame.title = zone.name;
     viewer.classList.add("open");
