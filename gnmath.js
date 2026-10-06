@@ -146,6 +146,7 @@ function describe(x) {
 }
 window.lgDebug = (win) => {
     note("page", win.location.href);
+    win.performance.setResourceTimingBufferSize(5000);
     win.addEventListener("error", (e) => {
         const el = e.target;
         if (el && el !== win && (el.src || el.href)) note("load failed", el.localName + " " + (el.src || el.href));
@@ -166,6 +167,21 @@ window.lgDebug = (win) => {
         return open0.apply(this, arguments);
     };
 };
+// Where a slow loading bar spends its time: per host, how many files and how long each took.
+function loadTiming() {
+    let list;
+    try { list = frame.contentWindow.performance.getEntriesByType("resource"); } catch (_) { return []; }
+    if (!list.length) return [];
+    const hosts = {};
+    for (const e of list) (hosts[new URL(e.name).host] ||= []).push(e);
+    return ["loads: " + list.length + " files"].concat(
+        Object.entries(hosts).sort((a, b) => b[1].length - a[1].length).map(([host, es]) => {
+            const ms = es.map((e) => Math.round(e.duration)).sort((a, b) => a - b);
+            const done = Math.max(...es.map((e) => e.responseEnd)) / 1000;
+            return "  " + host + ": " + ms.length + " files, median " + ms[ms.length >> 1] + "ms, slowest " +
+                ms[ms.length - 1] + "ms, all done " + done.toFixed(1) + "s after the game opened";
+        }));
+}
 function showDebug() {
     if (!gpu) {
         const c = document.createElement("canvas");
@@ -182,6 +198,7 @@ function showDebug() {
         "service worker: " + (navigator.serviceWorker && navigator.serviceWorker.controller ? "active" : "NOT controlling this page"),
         "game: " + frame.src,
         "game canvases: " + canvases,
+        ...loadTiming(),
         "",
     ].concat(debugLog.length ? debugLog : ["(nothing logged yet)"]).join("\n");
 }
