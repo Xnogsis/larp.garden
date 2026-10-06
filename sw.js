@@ -1,19 +1,33 @@
-// Serves /hub/<slug>/... straight out of GitHub repos via esm.sh (or jsDelivr), so
-// whole static game sites run under this origin with proper MIME types.
-// `repos` lists equivalent copies (upstream + forks), tried in order.
+// Serves /hub/gnmath/... straight out of gn-math's GitHub repos via esm.sh (or jsDelivr),
+// so the whole static game site runs under this origin with proper MIME types.
+// REPOS lists equivalent copies (upstream + forks), tried in order.
 //
 // Trust boundary: every repo listed here ships HTML and JS that runs as first-party
 // code on this origin (same cookies, storage, caches). Only add repos whose owners
 // are trusted; a malicious commit upstream is a malicious commit here. HUB_CSP below
 // narrows what such a page can do, but cannot isolate it from the origin.
-const HUBS = {
-    // gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
-    gnmath: { repos: ["freebuisness/html", "gn-math/html"], branch: "main",
-              // gn-math's Moto X3M pulls from repos that are gone; this self-contained copy has all 50 levels.
-              pages: { "96.html": "embeds/moto_x3m/index.html" },
-              // Only this repo has these folders; asking the others first costs a slow esm.sh 404 per file.
-              pin: { "embeds/moto_x3m/": "mochawoof/html55-new" } },
+const HUB = "/hub/gnmath/";
+// gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
+const REPOS = ["freebuisness/html", "gn-math/html"];
+const BRANCH = "main";
+
+// Games whose gn-math page is broken, replaced by a self-contained copy: the page
+// redirects to the copy's index.html, and the copy's folder is fetched only from its
+// repo (asking the others first costs a slow esm.sh 404 per file).
+const COPIES = {
+    // gn-math's Moto X3M pulls from repos that are gone; this copy has all 50 levels.
+    "96.html": { repo: "mochawoof/html55-new", dir: "embeds/moto_x3m/" },
 };
+
+// Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
+const HTML_FIXES = [
+    // Draw Climber's egret build draws nothing on some WebGL/ANGLE drivers (black canvas,
+    // no errors). Its 2D canvas renderer paints correctly.
+    ["yrgen73/draw-cl", (body) => body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"')],
+];
+
+// A few catalog entries point at renamed files ("7-f.html"); gn-math still has "<id>.html".
+const RENAMED_RE = /^(\d+)\D[^/]*\.html$/;
 
 // Any GitHub (/gh/) or npm (/npm/) file on a jsDelivr edge. esm.sh serves GitHub files
 // under /gh/ with the same "repo@ref/path" layout and npm files at the root as
@@ -34,7 +48,7 @@ function viaEsm(href) {
 // real SDK's offline behavior (loadData resolves "", isAudioEnabled is sync,
 // getLanguage falls back to "en"); unlisted members resolve to a no-op that
 // returns a resolved promise so callers can invoke them unconditionally.
-const YTGAME_RE = /^\/gh\/bubbls\/youtube-playables@[^/]+\/ytgame\.js$/;
+const YTGAME_RE = /^https:\/\/[^/]+\.jsdelivr\.net\/gh\/bubbls\/youtube-playables@[^/]+\/ytgame\.js(?:[?#]|$)/;
 const YTGAME_STUB = `'use strict';
 window.ytgame = (() => {
     const res = (v) => Promise.resolve(v);
@@ -81,6 +95,14 @@ async function fixedC3Runtime(request) {
     return new Response(body, { headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" } });
 }
 
+// Cross-origin files that games request and that need replacing: [URL pattern, handler].
+const CROSS_ORIGIN_FIXES = [
+    [BROKEN_C3_RE, (req) => fixedC3Runtime(req).catch(() => fetch(req))],
+    [YTGAME_RE, () => new Response(YTGAME_STUB, {
+        headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" },
+    })],
+];
+
 // Every hub file comes from esm.sh first (the one host that gets through filters that
 // block jsDelivr), then from jsDelivr.
 const SOURCES = [
@@ -98,34 +120,27 @@ const MIME = {
     data: "application/octet-stream", unityweb: "application/octet-stream", bin: "application/octet-stream",
 };
 
-const HUB_RE = /^\/hub\/([^/]+)\/?(.*)$/;
+const HUB_RE = /^\/hub\/gnmath(?:\/|$)(.*)$/;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
-function parseHubPath(pathname) {
+function hubPath(pathname) {
     const m = HUB_RE.exec(pathname);
-    if (!m || !HUBS[m[1]]) return null;
-    let path = m[2];
-    if (path === "" || path.endsWith("/")) path += "index.html";
-    return { slug: m[1], path };
+    if (!m) return null;
+    const path = m[1];
+    return path === "" || path.endsWith("/") ? path + "index.html" : path;
 }
 
-// Root-relative requests ("/js/main.js") coming from a hub page belong to that hub.
-async function hubFromClient(event) {
-    if (event.request.referrer) {
-        const m = HUB_RE.exec(new URL(event.request.referrer).pathname);
-        if (m && HUBS[m[1]]) return m[1];
-    }
+// Root-relative requests ("/js/main.js") coming from a hub page belong to the hub.
+async function fromHubPage(event) {
+    if (event.request.referrer && HUB_RE.test(new URL(event.request.referrer).pathname)) return true;
     // Looking up resultingClientId during a navigation deadlocks; only subresources get here.
     if (event.request.mode !== "navigate" && event.clientId) {
         const client = await self.clients.get(event.clientId);
-        if (client) {
-            const m = HUB_RE.exec(new URL(client.url).pathname);
-            if (m && HUBS[m[1]]) return m[1];
-        }
+        return !!client && HUB_RE.test(new URL(client.url).pathname);
     }
-    return null;
+    return false;
 }
 
 function mimeFor(path) {
@@ -163,54 +178,51 @@ function fetchWithTimeout(url, init) {
     return fetch(url, { ...init, referrerPolicy: "no-referrer", signal: ctl.signal }).finally(() => clearTimeout(timer));
 }
 
-async function fromMirrors(slug, path) {
-    const { repos, branch, pages, pin } = HUBS[slug];
-    if (pages && pages[path]) return Response.redirect("/hub/" + slug + "/" + pages[path], 302);
-    let lastStatus = 502;
-    let unreached = false;
-    const tried = [];
-    const pinned = pin && Object.keys(pin).find((dir) => path.startsWith(dir));
-    for (const repo of pinned ? [pin[pinned]] : repos) {
-        let res = null;
+// First ok response for path across repos and SOURCES; logs every attempt in tried.
+async function firstOk(repos, path, tried) {
+    for (const repo of repos) {
         for (const build of SOURCES) {
-            const url = build(repo, branch, path);
-            try {
-                res = await fetchWithTimeout(url, { cache: "force-cache" });
-                tried.push(res.status + " " + url);
-                if (res.ok) break;
-            } catch (e) {
-                tried.push(e.name + " " + url);
-            }
+            const url = build(repo, BRANCH, path);
+            const res = await fetchWithTimeout(url, { cache: "force-cache" }).catch((e) => e);
+            tried.push([res.status || res.name, url]);
+            if (res.ok) return res;
         }
-        if (res && res.ok) {
-            const headers = new Headers();
-            const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
-            headers.set("Content-Type", mime);
-            headers.set("Cache-Control", "public, max-age=86400");
-            let body = res.body;
-            if (mime === "text/html") {
-                headers.set("Content-Security-Policy", HUB_CSP);
-                headers.set("X-Content-Type-Options", "nosniff");
-                // Hub pages must keep sending a full referrer, or their root-relative
-                // links can't be routed back to the hub.
-                body = (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, "");
-                // Draw Climber's egret build draws nothing on some WebGL/ANGLE drivers
-                // (black canvas, no errors). Its 2D canvas renderer paints correctly.
-                if (body.includes("yrgen73/draw-cl")) {
-                    body = body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"');
-                }
-                const inject = STAY_FRAMED + ESM_SYNC_XHR + ALLOW_SLOW_WEBGL;
-                body = /<head[^>]*>/i.test(body)
-                    ? body.replace(/<head[^>]*>/i, (tag) => tag + inject)
-                    : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + inject);
-            }
-            return new Response(body, { status: 200, headers });
-        }
-        if (res) lastStatus = res.status;
-        else unreached = true;
     }
-    // Listed so a user without devtools can paste which source answered what (AbortError = cut off or timed out).
-    return new Response("Not found: " + slug + "/" + path + "\n\n" + tried.join("\n"), { status: unreached ? 502 : lastStatus, headers: { "Content-Type": "text/plain" } });
+    return null;
+}
+
+async function fromMirrors(path) {
+    if (COPIES[path]) return Response.redirect(HUB + COPIES[path].dir + "index.html", 302);
+    const copy = Object.values(COPIES).find((c) => path.startsWith(c.dir));
+    const repos = copy ? [copy.repo] : REPOS;
+    const tried = [];
+    const missing = () => tried.some(([status]) => status === 404);
+    let res = await firstOk(repos, path, tried);
+    const renamed = RENAMED_RE.exec(path);
+    if (!res && renamed && missing()) res = await firstOk(repos, renamed[1] + ".html", tried);
+    if (!res) {
+        // Listed so a user without devtools can paste which source answered what (AbortError = cut off or timed out).
+        return new Response("Not found: " + path + "\n\n" + tried.map((t) => t.join(" ")).join("\n"),
+            { status: missing() ? 404 : 502, headers: { "Content-Type": "text/plain" } });
+    }
+    const headers = new Headers();
+    const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
+    headers.set("Content-Type", mime);
+    headers.set("Cache-Control", "public, max-age=86400");
+    let body = res.body;
+    if (mime === "text/html") {
+        headers.set("Content-Security-Policy", HUB_CSP);
+        headers.set("X-Content-Type-Options", "nosniff");
+        // Hub pages must keep sending a full referrer, or their root-relative
+        // links can't be routed back to the hub.
+        body = (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, "");
+        for (const [marker, fix] of HTML_FIXES) if (body.includes(marker)) body = fix(body);
+        const inject = STAY_FRAMED + ESM_SYNC_XHR + ALLOW_SLOW_WEBGL;
+        body = /<head[^>]*>/i.test(body)
+            ? body.replace(/<head[^>]*>/i, (tag) => tag + inject)
+            : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + inject);
+    }
+    return new Response(body, { status: 200, headers });
 }
 
 self.addEventListener("fetch", (event) => {
@@ -219,17 +231,12 @@ self.addEventListener("fetch", (event) => {
 
     // Game scripts request jsDelivr files themselves; those go through esm.sh too.
     if (url.origin !== self.location.origin) {
-        if (BROKEN_C3_RE.test(url.href)) {
-            event.respondWith(fixedC3Runtime(event.request).catch(() => fetch(event.request)));
+        const fix = CROSS_ORIGIN_FIXES.find(([re]) => re.test(url.href));
+        if (fix) {
+            event.respondWith(fix[1](event.request));
             return;
         }
         if (!JSDELIVR_RE.test(url.href)) return;
-        if (YTGAME_RE.test(url.pathname)) {
-            event.respondWith(new Response(YTGAME_STUB, {
-                headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" },
-            }));
-            return;
-        }
         event.respondWith((async () => {
             const req = event.request;
             const init = req.mode === "navigate"
@@ -244,9 +251,9 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    const direct = parseHubPath(url.pathname);
+    const direct = hubPath(url.pathname);
     if (direct) {
-        event.respondWith(fromMirrors(direct.slug, direct.path));
+        event.respondWith(fromMirrors(direct));
         return;
     }
 
@@ -255,14 +262,13 @@ self.addEventListener("fetch", (event) => {
     if (event.request.mode === "navigate" && url.search === UNFRAME_QUERY) return;
 
     event.respondWith((async () => {
-        const slug = await hubFromClient(event);
-        if (!slug) return fetch(event.request);
+        if (!(await fromHubPage(event))) return fetch(event.request);
         // A "../" from a hub's root page climbs out to "/hub/x"; on the real site the
         // browser would have clamped it at the root, so drop the stray "hub" segment.
         const path = url.pathname.replace(/^\/(hub\/)?/, "");
         if (event.request.mode === "navigate") {
-            return Response.redirect("/hub/" + slug + "/" + path + url.search + url.hash, 302);
+            return Response.redirect(HUB + path + url.search + url.hash, 302);
         }
-        return fromMirrors(slug, path);
+        return fromMirrors(path);
     })());
 });

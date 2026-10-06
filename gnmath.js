@@ -1,7 +1,6 @@
-// Catalog page for a gn-math style hub. The <script> tag says which sw.js hub serves
-// the games and which hosts (each a "<cdn>/<owner>/" prefix) the catalog and covers come from.
-const HUB = document.currentScript.dataset.hub;
-const TITLE = document.currentScript.dataset.title || HUB;
+// gn-math catalog; sw.js serves the games under /hub/gnmath/. The <script> tag lists
+// the hosts (each a "<cdn>/<owner>/" prefix) the catalog and covers come from.
+const TITLE = "gn-math";
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
 // esm.sh rewrites .js files into ES modules unless asked for the raw file.
 const at = (src, repo, path) => src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
@@ -88,22 +87,9 @@ function openZone(zone) {
     esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
-    // A few catalog entries point at renamed files; only a 4xx confirms one is missing.
-    // Network failures and timeouts leave the catalog file's own error visible.
-    // Iframes fire load, not error, on a 404 page, so the iframe starts on the catalog's file
-    // right away while probes decide whether to swap in the fallback. The fallback is probed
-    // too, so a failed load keeps showing the catalog file's own error instead of a missing "<id>.html".
-    const url = "/hub/" + HUB + "/" + zone.url.replace("{HTML_URL}/", "");
-    const fallback = "/hub/" + HUB + "/" + zone.id + ".html";
-    const found = (u) => fetch(u).then((r) => r.ok, () => false);
+    const url = "/hub/gnmath/" + zone.url.replace("{HTML_URL}/", "");
     note("open", zone.id + " " + url);
     frame.src = url;
-    fetch(url).then((r) => r.status >= 400 && r.status < 500, () => false).then(async (missing) => {
-        if (!missing || url === fallback || !(await found(fallback))) return;
-        if (frame.src !== new URL(url, location.href).href) return;
-        note("open", zone.id + " " + fallback + " (catalog file missing)");
-        frame.src = fallback;
-    });
     frame.title = zone.name;
     viewer.classList.add("open");
     document.title = zone.name;
