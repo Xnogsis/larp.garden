@@ -17,6 +17,10 @@ const BRANCH = "main";
 const COPIES = {
     // gn-math's Moto X3M pulls from repos that are gone; this copy has all 50 levels.
     "96.html": { repo: "mochawoof/html55-new", dir: "embeds/moto_x3m/" },
+    // gn-math's old Eaglercraft versions are "this version is broken" stubs; UGS has offline single-file builds.
+    "298.html": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Alpha-126-Offline.html" },
+    "299.html": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Beta-1.3-Offline.html" },
+    "301.html": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Indev-Offline.html" },
 };
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
@@ -24,6 +28,8 @@ const HTML_FIXES = [
     // Draw Climber's egret build draws nothing on some WebGL/ANGLE drivers (black canvas,
     // no errors). Its 2D canvas renderer paints correctly.
     ["yrgen73/draw-cl", (body) => body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"')],
+    // Minecraft 1.8.8's <base> is missing jsDelivr's "gh/", so every file 404s.
+    ["cdn.jsdelivr.net/Theprocat27/", (body) => body.replace("cdn.jsdelivr.net/Theprocat27/", "cdn.jsdelivr.net/gh/Theprocat27/")],
 ];
 
 // A few catalog entries point at renamed files ("7-f.html"); gn-math still has "<id>.html".
@@ -37,7 +43,9 @@ const JSDELIVR_RE = /^https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/(
 function viaEsm(href) {
     const m = JSDELIVR_RE.exec(href);
     if (!m) return href;
-    return ("https://esm.sh/" + (m[1] === "gh" ? "gh/" : "") + m[2] + (m[3] ? m[3] + "&raw" : "?raw")).replace(/'/g, "%27");
+    // esm.sh has no "@latest" for GitHub repos; leaving the ref out means the default branch.
+    const path = m[1] === "gh" ? "gh/" + m[2].replace(/^([^/]+\/[^/@]+)@latest\//, "$1/") : m[2];
+    return ("https://esm.sh/" + path + (m[3] ? m[3] + "&raw" : "?raw")).replace(/'/g, "%27");
 }
 
 // bubbls/youtube-playables' ytgame.js is the real YouTube Playables SDK, which
@@ -192,7 +200,7 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path) {
-    if (COPIES[path]) return Response.redirect(HUB + COPIES[path].dir + "index.html", 302);
+    if (COPIES[path]) return Response.redirect(HUB + COPIES[path].dir + (COPIES[path].page || "index.html"), 302);
     const copy = Object.values(COPIES).find((c) => path.startsWith(c.dir));
     const repos = copy ? [copy.repo] : REPOS;
     const tried = [];
