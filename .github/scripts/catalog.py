@@ -1,6 +1,6 @@
 """Refresh zones.json from gn-math and make a small WebP thumbnail in t/ for every cover.
 
-Usage: python .github/scripts/catalog.py <checkout of freebuisness/covers>
+Usage: python .github/scripts/catalog.py <checkout of Xnogsis/covers>
 """
 import json
 import sys
@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image
 
-ZONES_URL = "https://raw.githubusercontent.com/freebuisness/assets/main/zones.json"
+ZONES_URL = "https://raw.githubusercontent.com/Xnogsis/assets/main/zones.json"
 SIZE = (240, 240)
 
 covers = Path(sys.argv[1])

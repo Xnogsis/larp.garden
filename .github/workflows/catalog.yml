@@ -22,7 +22,7 @@ jobs:
 
       - name: Get the covers
         run: |
-          git clone --depth 1 https://github.com/freebuisness/covers.git "$RUNNER_TEMP/covers"
+          git clone --depth 1 https://github.com/Xnogsis/covers.git "$RUNNER_TEMP/covers"
           pip install --quiet pillow==11.3.0
 
       - name: Refresh zones.json and thumbnails

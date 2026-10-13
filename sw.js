@@ -7,8 +7,7 @@
 // are trusted; a malicious commit upstream is a malicious commit here. HUB_CSP below
 // narrows what such a page can do, but cannot isolate it from the origin.
 const HUB = "/hub/gnmath/";
-// gn-math's own org is blocked on jsDelivr, so the up-to-date fork goes first.
-const REPOS = ["freebuisness/html", "gn-math/html"];
+const REPOS = ["Xnogsis/html"];
 const BRANCH = "main";
 
 // Games whose gn-math page is broken, replaced by a self-contained copy: the page
@@ -17,11 +16,11 @@ const BRANCH = "main";
 // since the daily catalog refresh can move a game to "<id>-fix.html".
 const COPIES = {
     // gn-math's Moto X3M pulls from repos that are gone; this copy has all 50 levels.
-    "96": { repo: "mochawoof/html55-new", dir: "embeds/moto_x3m/" },
+    "96": { repo: "Xnogsis/html55-new", dir: "embeds/moto_x3m/" },
     // gn-math's old Eaglercraft versions are "this version is broken" stubs; UGS has offline single-file builds.
-    "298": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Alpha-126-Offline.html" },
-    "299": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Beta-1.3-Offline.html" },
-    "301": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Indev-Offline.html" },
+    "298": { repo: "Xnogsis/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Alpha-126-Offline.html" },
+    "299": { repo: "Xnogsis/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Beta-1.3-Offline.html" },
+    "301": { repo: "Xnogsis/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Indev-Offline.html" },
 };
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].

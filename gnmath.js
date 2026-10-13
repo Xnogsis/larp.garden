@@ -120,7 +120,7 @@ document.getElementById("fullscreen").addEventListener("click", () => frame.requ
 // Hub pages bounce out when not framed, so the new tab gets this viewer, which reopens ?id=.
 document.getElementById("newtab").addEventListener("click", () => window.open(location.href, "_blank"));
 // play.svg runs the game inside a jsDelivr tab, for filters that only let jsDelivr tabs load jsDelivr files. sw.js fixes don't apply there.
-document.getElementById("jsdtab").addEventListener("click", () => window.open("https://cdn.jsdelivr.net/gh/Xnogsis/larp.garden@main/play.svg#gh/freebuisness/html@main/" + gameFile, "_blank", "noopener"));
+document.getElementById("jsdtab").addEventListener("click", () => window.open("https://cdn.jsdelivr.net/gh/Xnogsis/larp.garden@main/play.svg#gh/Xnogsis/html@main/" + gameFile, "_blank", "noopener"));
 document.getElementById("hidebar").addEventListener("click", () => viewer.classList.add("nobar"));
 document.getElementById("showbar").addEventListener("click", () => viewer.classList.remove("nobar"));
 // The new tab has our origin, so sw.js still serves the iframe; only the address bar shows about:blank.
