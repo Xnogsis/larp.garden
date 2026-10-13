@@ -13,14 +13,15 @@ const BRANCH = "main";
 
 // Games whose gn-math page is broken, replaced by a self-contained copy: the page
 // redirects to the copy's index.html, and the copy's folder is fetched only from its
-// repo (asking the others first costs a slow esm.sh 404 per file).
+// repo (asking the others first costs a slow esm.sh 404 per file). Keyed by catalog id,
+// since the daily catalog refresh can move a game to "<id>-fix.html".
 const COPIES = {
     // gn-math's Moto X3M pulls from repos that are gone; this copy has all 50 levels.
-    "96.html": { repo: "mochawoof/html55-new", dir: "embeds/moto_x3m/" },
+    "96": { repo: "mochawoof/html55-new", dir: "embeds/moto_x3m/" },
     // gn-math's old Eaglercraft versions are "this version is broken" stubs; UGS has offline single-file builds.
-    "298.html": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Alpha-126-Offline.html" },
-    "299.html": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Beta-1.3-Offline.html" },
-    "301.html": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Indev-Offline.html" },
+    "298": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Alpha-126-Offline.html" },
+    "299": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Beta-1.3-Offline.html" },
+    "301": { repo: "bubbls/ugs-singlefile", dir: "UGS-Files/", page: "clEaglercraft-Indev-Offline.html" },
 };
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
@@ -200,7 +201,8 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path) {
-    if (COPIES[path]) return Response.redirect(HUB + COPIES[path].dir + (COPIES[path].page || "index.html"), 302);
+    const whole = COPIES[(/^(\d+)(?:\D[^/]*)?\.html$/.exec(path) || [])[1]];
+    if (whole) return Response.redirect(HUB + whole.dir + (whole.page || "index.html"), 302);
     const copy = Object.values(COPIES).find((c) => path.startsWith(c.dir));
     const repos = copy ? [copy.repo] : REPOS;
     const tried = [];

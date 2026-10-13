@@ -23,21 +23,31 @@ function fetchWithTimeout(url, init) {
 }
 
 async function firstOk(repo, path) {
+    // Same-origin copy first: refreshed daily by .github/workflows/catalog.yml and no extra connection.
+    const local = await fetchWithTimeout(path, { cache: "no-cache" }).catch(() => null);
+    if (local && local.ok) return local;
     for (const src of SOURCES) {
         try {
             const res = await fetchWithTimeout(at(src, repo, path), { cache: "no-cache", referrerPolicy: "no-referrer" });
             if (res.ok) return res;
         } catch (_) { /* next source */ }
     }
-    // Same-origin copy committed to this repo, for networks that drop cross-site CDN requests.
-    const local = await fetchWithTimeout(path).catch(() => null);
-    if (local && local.ok) return local;
     throw new Error("all sources failed for " + repo + "/" + path);
 }
 
+// t/ holds ~9 KB thumbnails of the covers (avg ~400 KB), made by .github/scripts/catalog.py.
 function coverFor(zone) {
     const file = (zone.cover || "").replace("{COVER_URL}/", "");
-    return SOURCES.map((s) => at(s, "covers", file));
+    return ["t/" + file.replace(/\.[^.]+$/, ".webp"), ...SOURCES.map((s) => at(s, "covers", file))];
+}
+
+// Warm the game page while the pointer is on its card; sw.js fetches with force-cache,
+// so the click reuses the response.
+const warmed = new Set();
+function warm(zone) {
+    if (warmed.has(zone.id) || zone.url.startsWith("http")) return;
+    warmed.add(zone.id);
+    fetch("/hub/gnmath/" + zone.url.replace("{HTML_URL}/", "")).catch(() => {});
 }
 
 function render(filter) {
@@ -51,6 +61,7 @@ function render(filter) {
         btn.type = "button";
         const img = document.createElement("img");
         img.loading = "lazy";
+        img.decoding = "async";
         img.alt = "";
         const covers = coverFor(z);
         let i = 0;
@@ -60,6 +71,7 @@ function render(filter) {
         name.textContent = z.name;
         btn.append(img, name);
         btn.addEventListener("click", () => openZone(z));
+        btn.addEventListener("pointerenter", () => warm(z));
         li.append(btn);
         rows.append(li);
     }
