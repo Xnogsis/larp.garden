@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>larp.garden / home</title>
-    <script>if (localStorage.theme === "dark") document.documentElement.classList.add("dark");</script>
+    <script>if (localStorage.theme !== "light") document.documentElement.classList.add("dark");</script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header id="top">
         <a class="brand" href="home.html">larp.garden</a>
         <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a></nav>
-        <button type="button" id="theme">Dark</button>
+        <button type="button" id="theme">Light</button>
     </header>
 
     <main class="home">
@@ -41,6 +41,7 @@
                 <article>
                     <time datetime="2026-10-13">October 13, 2026</time>
                     <ul>
+                        <li>Dark mode is now the default, with a saved Light option. UGS games can open directly in a new tab.</li>
                         <li>Removed the page modification popup and monitoring system.</li>
                         <li>UGS now opens a searchable local catalog with the same game viewer and controls as gn-math.</li>
                         <li>Added this Updates section to track new features and fixes.</li>
@@ -127,7 +128,7 @@
         const paintTheme = () => { themeBtn.textContent = document.documentElement.classList.contains('dark') ? 'Light' : 'Dark'; };
         themeBtn.addEventListener('click', () => {
             const dark = document.documentElement.classList.toggle('dark');
-            if (dark) localStorage.theme = 'dark'; else localStorage.removeItem('theme');
+            localStorage.theme = dark ? 'dark' : 'light';
             paintTheme();
         });
         paintTheme();

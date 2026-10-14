@@ -31,9 +31,16 @@ try:
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(base + '/home.html', wait_until='domcontentloaded')
+            assert page.locator('html').evaluate("el => el.classList.contains('dark')")
+            page.get_by_role('button', name='Light', exact=True).click()
+            page.reload(wait_until='domcontentloaded')
+            assert page.evaluate("localStorage.theme") == 'light'
+            assert not page.locator('html').evaluate("el => el.classList.contains('dark')")
             page.get_by_role('link', name='UGS', exact=True).click()
             page.wait_for_function("document.querySelectorAll('#grid .zone').length > 0")
             assert page.url == base + '/ugs.html'
+            assert not page.locator('html').evaluate("el => el.classList.contains('dark')")
+            page.get_by_role('button', name='Dark', exact=True).click()
             assert page.locator('#grid .zone').count() == len(games)
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
             page.get_by_role('searchbox').fill('2048')
@@ -42,6 +49,14 @@ try:
             page.locator('#grid .zone').filter(has_text='2048').first.click()
             assert page.locator('#viewer').evaluate("el => el.classList.contains('open')")
             assert '/hub/ugs/UGS-Files/' in page.locator('#frame').get_attribute('src')
+            assert page.get_by_role('button', name='jsDelivr tab', exact=True).count() == 0
+            with page.expect_popup() as opened:
+                page.get_by_role('button', name='open game in new tab', exact=True).click()
+            popup = opened.value
+            popup.wait_for_load_state('domcontentloaded')
+            assert urlsplit(popup.url).path.startswith('/hub/ugs/UGS-Files/')
+            assert popup.evaluate('window.opener === null')
+            popup.close()
             game_id = parse_qs(urlsplit(page.url).query)['id'][0]
             page.reload(wait_until='domcontentloaded')
             page.wait_for_function("document.querySelector('#viewer').classList.contains('open')")
@@ -59,6 +74,8 @@ try:
             assert page.locator('#content-frame').get_attribute('src') == 'ugs.html'
             page.goto(base + '/gnmath.html', wait_until='domcontentloaded')
             page.wait_for_function("document.querySelectorAll('#grid .zone').length > 0")
+            assert page.locator('html').evaluate("el => el.classList.contains('dark')")
+            assert page.locator('#jsdtab').count() == 1
             page.get_by_role('searchbox').fill('Retro Bowl')
             page.wait_for_function("document.querySelectorAll('#grid .zone').length < 10")
             assert page.locator('#grid .zone').count() > 0

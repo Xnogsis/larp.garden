@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UGS</title>
     <link rel="stylesheet" href="style.css">
-    <script>if (localStorage.theme === "dark") document.documentElement.classList.add("dark");</script>
+    <script>if (localStorage.theme !== "light") document.documentElement.classList.add("dark");</script>
 </head>
 <body>
     <header id="top">
         <a class="brand" href="home.html">larp.garden</a>
         <nav><a href="home.html">Home</a><a href="gnmath.html">Games</a><a href="ugs.html" aria-current="page">UGS</a></nav>
-        <button type="button" id="theme">Dark</button>
+        <button type="button" id="theme">Light</button>
     </header>
     <main>
         <h1>UGS</h1>
@@ -32,9 +32,9 @@
             <button type="button" id="close">&larr; back</button>
             <b id="viewer-title"></b>
             <span id="viewer-author"></span>
-            <button type="button" id="newtab">new tab</button>
+            <button type="button" id="newtab">viewer tab</button>
             <button type="button" id="blank">about:blank</button>
-            <button type="button" id="jsdtab">jsDelivr tab</button>
+            <button type="button" id="gametab">open game in new tab</button>
             <button type="button" id="hidebar">hide bar</button>
             <button type="button" id="fullscreen">fullscreen</button>
         </div>

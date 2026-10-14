@@ -228,7 +228,10 @@ async function fromMirrors(path, hub = "gnmath") {
         // links can't be routed back to the hub.
         body = (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, "");
         for (const [marker, fix] of HTML_FIXES) if (body.includes(marker)) body = fix(body);
-        const inject = STAY_FRAMED + ESM_SYNC_XHR + ALLOW_SLOW_WEBGL;
+        const prelude = hub === "ugs"
+            ? '<script>try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>'
+            : STAY_FRAMED;
+        const inject = prelude + ESM_SYNC_XHR + ALLOW_SLOW_WEBGL;
         body = /<head[^>]*>/i.test(body)
             ? body.replace(/<head[^>]*>/i, (tag) => tag + inject)
             : body.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) => doctype + inject);
