@@ -1,4 +1,4 @@
-// Serves /hub/gnmath/... straight out of gn-math's GitHub repos via esm.sh (or jsDelivr),
+// Serves /hub/gnmath/... and /hub/ugs/... from our GitHub forks via esm.sh (or jsDelivr),
 // so the whole static game site runs under this origin with proper MIME types.
 // REPOS lists equivalent copies (upstream + forks), tried in order.
 //
@@ -6,7 +6,6 @@
 // code on this origin (same cookies, storage, caches). Only add repos whose owners
 // are trusted; a malicious commit upstream is a malicious commit here. HUB_CSP below
 // narrows what such a page can do, but cannot isolate it from the origin.
-const HUB = "/hub/gnmath/";
 const REPOS = ["Xnogsis/html"];
 const BRANCH = "main";
 
@@ -128,7 +127,7 @@ const MIME = {
     data: "application/octet-stream", unityweb: "application/octet-stream", bin: "application/octet-stream",
 };
 
-const HUB_RE = /^\/hub\/gnmath(?:\/|$)(.*)$/;
+const HUB_RE = /^\/hub\/(gnmath|ugs)(?:\/|$)(.*)$/;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
@@ -136,17 +135,19 @@ self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 function hubPath(pathname) {
     const m = HUB_RE.exec(pathname);
     if (!m) return null;
-    const path = m[1];
-    return path === "" || path.endsWith("/") ? path + "index.html" : path;
+    const path = m[2];
+    return { hub: m[1], path: path === "" || path.endsWith("/") ? path + "index.html" : path };
 }
 
 // Root-relative requests ("/js/main.js") coming from a hub page belong to the hub.
 async function fromHubPage(event) {
-    if (event.request.referrer && HUB_RE.test(new URL(event.request.referrer).pathname)) return true;
+    const referrer = event.request.referrer && HUB_RE.exec(new URL(event.request.referrer).pathname);
+    if (referrer) return referrer[1];
     // Looking up resultingClientId during a navigation deadlocks; only subresources get here.
     if (event.request.mode !== "navigate" && event.clientId) {
         const client = await self.clients.get(event.clientId);
-        return !!client && HUB_RE.test(new URL(client.url).pathname);
+        const match = client && HUB_RE.exec(new URL(client.url).pathname);
+        return match ? match[1] : null;
     }
     return false;
 }
@@ -199,11 +200,12 @@ async function firstOk(repos, path, tried) {
     return null;
 }
 
-async function fromMirrors(path) {
-    const whole = COPIES[(/^(\d+)(?:\D[^/]*)?\.html$/.exec(path) || [])[1]];
+async function fromMirrors(path, hub = "gnmath") {
+    const HUB = "/hub/" + hub + "/";
+    const whole = hub === "gnmath" && COPIES[(/^(\d+)(?:\D[^/]*)?\.html$/.exec(path) || [])[1]];
     if (whole) return Response.redirect(HUB + whole.dir + (whole.page || "index.html"), 302);
-    const copy = Object.values(COPIES).find((c) => path.startsWith(c.dir));
-    const repos = copy ? [copy.repo] : REPOS;
+    const copy = hub === "gnmath" && Object.values(COPIES).find((c) => path.startsWith(c.dir));
+    const repos = hub === "ugs" ? ["Xnogsis/ugs-singlefile"] : copy ? [copy.repo] : REPOS;
     const tried = [];
     const missing = () => tried.some(([status]) => status === 404);
     let res = await firstOk(repos, path, tried);
@@ -262,7 +264,7 @@ self.addEventListener("fetch", (event) => {
 
     const direct = hubPath(url.pathname);
     if (direct) {
-        event.respondWith(fromMirrors(direct));
+        event.respondWith(fromMirrors(direct.path, direct.hub));
         return;
     }
 
@@ -271,13 +273,14 @@ self.addEventListener("fetch", (event) => {
     if (event.request.mode === "navigate" && url.search === UNFRAME_QUERY) return;
 
     event.respondWith((async () => {
-        if (!(await fromHubPage(event))) return fetch(event.request);
+        const hub = await fromHubPage(event);
+        if (!hub) return fetch(event.request);
         // A "../" from a hub's root page climbs out to "/hub/x"; on the real site the
         // browser would have clamped it at the root, so drop the stray "hub" segment.
         const path = url.pathname.replace(/^\/(hub\/)?/, "");
         if (event.request.mode === "navigate") {
-            return Response.redirect(HUB + path + url.search + url.hash, 302);
+            return Response.redirect("/hub/" + hub + "/" + path + url.search + url.hash, 302);
         }
-        return fromMirrors(path);
+        return fromMirrors(path, hub);
     })());
 });

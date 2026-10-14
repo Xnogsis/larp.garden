@@ -89,6 +89,8 @@ h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacin
 .zone:hover img { outline: 2px solid var(--fg); outline-offset: -2px; }
 .zone span { display: block; margin-top: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .zone:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.zone.text-zone { min-height: 72px; padding: 12px; border: 1px solid var(--line); background: var(--hover); }
+.zone.text-zone span { margin: 0; white-space: normal; }
 footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 
 /* game viewer */

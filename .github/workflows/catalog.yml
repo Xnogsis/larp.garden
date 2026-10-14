@@ -1,4 +1,4 @@
-name: Refresh gn-math catalog
+name: Refresh game catalogs
 
 on:
   schedule:
@@ -28,17 +28,22 @@ jobs:
       - name: Refresh zones.json and thumbnails
         run: python .github/scripts/catalog.py "$RUNNER_TEMP/covers"
 
+      - name: Refresh UGS catalog
+        run: |
+          git clone --bare --depth 1 --filter=blob:none https://github.com/Xnogsis/ugs-singlefile.git "$RUNNER_TEMP/ugs"
+          python .github/scripts/ugs-catalog.py "$RUNNER_TEMP/ugs"
+
       - name: Commit if changed
         id: commit
         run: |
-          git add zones.json t
+          git add zones.json t ugs-games.json
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "gn-math catalog for $(date -u +%Y-%m-%d)"
+          git commit -m "Game catalogs for $(date -u +%Y-%m-%d)"
           git pull --rebase && git push
           echo "changed=true" >> "$GITHUB_OUTPUT"
 

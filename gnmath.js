@@ -1,6 +1,10 @@
-// gn-math catalog; sw.js serves the games under /hub/gnmath/. The <script> tag lists
-// the hosts (each a "<cdn>/<owner>/" prefix) the catalog and covers come from.
-const TITLE = "gn-math";
+// Shared gn-math/UGS catalog and viewer. sw.js serves games under /hub/<hub>/.
+// The script's data attributes select the hub and catalog/cover hosts.
+const HUB = document.currentScript.dataset.hub || "gnmath";
+const TITLE = document.currentScript.dataset.title || "gn-math";
+const REPO = HUB === "ugs" ? "Xnogsis/ugs-singlefile" : "Xnogsis/html";
+const hubUrl = (file) => "/hub/" + HUB + "/" + file;
+const gamePath = (zone) => zone.url.replace("{HTML_URL}/", "").split("/").map(encodeURIComponent).join("/");
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
 // esm.sh rewrites .js files into ES modules unless asked for the raw file.
 const at = (src, repo, path) => src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
@@ -47,12 +51,13 @@ const warmed = new Set();
 function warm(zone) {
     if (warmed.has(zone.id) || zone.url.startsWith("http")) return;
     warmed.add(zone.id);
-    fetch("/hub/gnmath/" + zone.url.replace("{HTML_URL}/", "")).catch(() => {});
+    fetch(hubUrl(gamePath(zone))).catch(() => {});
 }
 
 function render(filter) {
-    const q = filter.trim().toLowerCase();
-    const shown = zones.filter((z) => !q || z.name.toLowerCase().includes(q));
+    const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const q = normalize(filter);
+    const shown = zones.filter((z) => !q || normalize(z.name).includes(q));
     const rows = document.createDocumentFragment();
     for (const z of shown) {
         const li = document.createElement("li");
@@ -65,11 +70,13 @@ function render(filter) {
         img.alt = "";
         const covers = coverFor(z);
         let i = 0;
-        img.src = covers[i];
+        if (z.cover) img.src = covers[i];
         img.onerror = () => { if (++i < covers.length) img.src = covers[i]; else img.onerror = null; };
         const name = document.createElement("span");
         name.textContent = z.name;
-        btn.append(img, name);
+        if (z.cover) btn.append(img);
+        else btn.classList.add("text-zone");
+        btn.append(name);
         btn.addEventListener("click", () => openZone(z));
         btn.addEventListener("pointerenter", () => warm(z));
         li.append(btn);
@@ -81,7 +88,7 @@ function render(filter) {
 
 // Retro Bowl College's files come from a repo esm.sh refuses to serve, so on networks
 // that block jsDelivr it stays black; plain Retro Bowl loads.
-const ESM_NOTES = { 34: [33, "play Retro Bowl"] };
+const ESM_NOTES = HUB === "gnmath" ? { 34: [33, "play Retro Bowl"] } : {};
 const esmNote = document.createElement("span");
 esmNote.hidden = true;
 esmNote.textContent = "Black screen? Your network may block jsDelivr. ";
@@ -100,14 +107,14 @@ function openZone(zone) {
     esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
-    gameFile = zone.url.replace("{HTML_URL}/", "");
-    const url = "/hub/gnmath/" + gameFile;
+    gameFile = gamePath(zone);
+    const url = hubUrl(gameFile);
     note("open", zone.id + " " + url);
     frame.src = url;
     frame.title = zone.name;
     viewer.classList.add("open");
     document.title = zone.name;
-    history.replaceState(null, "", "?id=" + zone.id);
+    history.replaceState(null, "", "?id=" + encodeURIComponent(zone.id));
 }
 
 document.getElementById("close").addEventListener("click", () => {
@@ -120,7 +127,7 @@ document.getElementById("fullscreen").addEventListener("click", () => frame.requ
 // Hub pages bounce out when not framed, so the new tab gets this viewer, which reopens ?id=.
 document.getElementById("newtab").addEventListener("click", () => window.open(location.href, "_blank"));
 // play.svg runs the game inside a jsDelivr tab, for filters that only let jsDelivr tabs load jsDelivr files. sw.js fixes don't apply there.
-document.getElementById("jsdtab").addEventListener("click", () => window.open("https://cdn.jsdelivr.net/gh/Xnogsis/larp.garden@main/play.svg#gh/Xnogsis/html@main/" + gameFile, "_blank", "noopener"));
+document.getElementById("jsdtab").addEventListener("click", () => window.open("https://cdn.jsdelivr.net/gh/Xnogsis/larp.garden@main/play.svg#gh/" + REPO + "@main/" + gameFile, "_blank", "noopener"));
 document.getElementById("hidebar").addEventListener("click", () => viewer.classList.add("nobar"));
 document.getElementById("showbar").addEventListener("click", () => viewer.classList.remove("nobar"));
 // The new tab has our origin, so sw.js still serves the iframe; only the address bar shows about:blank.
@@ -266,9 +273,11 @@ const swReady = "serviceWorker" in navigator
         ? "service workers need https; open https://" + location.host + " instead"
         : "no service worker support"));
 
-Promise.all([firstOk("assets", "zones.json").then((r) => r.json()), swReady])
+const catalog = HUB === "ugs" ? fetchWithTimeout("ugs-games.json") : firstOk("assets", "zones.json");
+Promise.all([catalog.then((r) => { if (!r.ok) throw new Error("catalog HTTP " + r.status); return r.json(); }), swReady])
     .then(([list]) => {
-        zones = list.filter((z) => z.id >= 0 && z.url && !z.url.startsWith("http"));
+        zones = list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http"));
+        document.cookie = "access_granted=" + HUB + ".html; max-age=2592000; path=/";
         status.textContent = "";
         render("");
         const id = new URLSearchParams(location.search).get("id");
