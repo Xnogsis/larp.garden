@@ -119,8 +119,11 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 /* home */
 .home { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 48px; align-items: start; }
 .home section + section { margin-top: 40px; }
-.experiments summary { cursor: pointer; font-weight: 600; }
-.experiments p { color: var(--muted); font-size: 13px; }
+.home section.experiments-section { margin-top: 24px; }
+.experiments { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.experiments summary { cursor: pointer; font-weight: 600; padding: 12px 4px; }
+.experiments p { margin: 0; padding: 0 4px 12px 24px; color: var(--muted); font-size: 14px; }
+.experiments-section + footer { margin-top: 24px; }
 .lede { color: var(--muted); max-width: 52ch; margin: 8px 0 0; }
 .page-list { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .page-link {
