@@ -19,3 +19,5 @@ For every user-facing feature or fix, update the Updates section in `home.html` 
 ## Local Celeste assets
 
 Before testing Celeste locally, run `bash .github/scripts/prepare-celeste.sh` from the checkout. It downloads about 711 MiB of pinned runtime files into the ignored `celeste-assets/` directory and reuses completed downloads. Never commit these generated files. The Pages workflow prepares and caches the same assets before publishing.
+
+For Snow Rider, run `bash .github/scripts/prepare-snow-rider.sh`; its generated files live in the ignored `snow-rider-assets/` directory and are also prepared by the Pages workflow.

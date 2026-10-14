@@ -162,9 +162,14 @@ function mimeFor(path) {
     return MIME[ext] || null;
 }
 
-async function celesteAsset(commit, path) {
-    const res = await fetch(self.location.origin + "/celeste-assets/" + commit + "/" + path, { cache: "force-cache" });
-    return new Response(res.body, {
+async function hostedGameAsset(directory, commit, path) {
+    const res = await fetch(self.location.origin + "/" + directory + "/" + commit + "/" + path, { cache: "force-cache" });
+    let body = res.body;
+    if (res.ok && mimeFor(path) === "text/html") {
+        body = (await res.text()).replace(/<head[^>]*>/i, (tag) => tag
+            + '<script>try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>' + ALLOW_SLOW_WEBGL);
+    }
+    return new Response(body, {
         status: res.status,
         headers: {
             "Content-Type": mimeFor(path) || res.headers.get("content-type") || "application/octet-stream",
@@ -217,6 +222,9 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path, hub = "gnmath") {
+    if (hub === "gnmath" && /^119(?:\D[^/]*)?\.html$/.test(path)) {
+        return Response.redirect(self.location.origin + "/snow-rider-assets/6b7c2b9167b592528b221428414e63f06c4640b9/index.html", 302);
+    }
     const HUB = "/hub/" + hub + "/";
     const whole = hub === "gnmath" && COPIES[(/^(\d+)(?:\D[^/]*)?\.html$/.exec(path) || [])[1]];
     if (whole) return Response.redirect(HUB + whole.dir + (whole.page || "index.html"), 302);
@@ -281,9 +289,9 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    const celeste = /^\/celeste-assets\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
-    if (celeste) {
-        event.respondWith(celesteAsset(celeste[1], celeste[2]));
+    const hosted = /^\/(celeste-assets|snow-rider-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
+    if (hosted) {
+        event.respondWith(hostedGameAsset(hosted[1], hosted[2], hosted[3]));
         return;
     }
 

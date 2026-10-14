@@ -120,6 +120,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 
 /* home */
 .home { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 48px; align-items: start; }
+.home-bottom { max-width: 1200px; margin: 0 auto 24px; padding: 0 24px; color: var(--muted); font-size: 13px; }
 .home section + section { margin-top: 40px; }
 .home section.experiments-section { margin-top: 24px; }
 .experiments { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
@@ -161,6 +162,7 @@ aside p:last-child { margin-bottom: 0; }
     .home { grid-template-columns: 1fr; gap: 40px; }
     #top { padding: 0 16px; gap: 16px; }
     main { padding: 24px 16px 48px; }
+    .home-bottom { padding: 0 16px; }
     .page-link { flex-wrap: wrap; gap: 4px 16px; }
     .page-link small { flex-basis: 100%; order: 3; }
     #grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 20px 12px; }
