@@ -15,3 +15,7 @@ Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/age
 ## Site updates
 
 For every user-facing feature or fix, update the Updates section in `home.html` in the same change. Add a short, plain-language note under the newest date first; group notes from the same day. Use dates in America/Los_Angeles. Record completed changes, not plans, internal maintenance, or routine automated catalog/comic refreshes. Preserve earlier entries.
+
+## Local Celeste assets
+
+Before testing Celeste locally, run `bash .github/scripts/prepare-celeste.sh` from the checkout. It downloads about 711 MiB of pinned runtime files into the ignored `celeste-assets/` directory and reuses completed downloads. Never commit these generated files. The Pages workflow prepares and caches the same assets before publishing.

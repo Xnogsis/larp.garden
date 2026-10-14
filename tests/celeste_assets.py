@@ -16,8 +16,7 @@ const originalFetch = fetch;
 self.fetch = (input, init) => {{
     const url = typeof input === 'string' ? input : input.url;
     if (url.includes('/gh/Xnogsis/html@main/623-fix2.html')) return originalFetch('/upstream/page.html');
-    const prefix = 'https://raw.githubusercontent.com/web-ports/celeste/{commit}/';
-    return originalFetch(url.startsWith(prefix) ? '/upstream/' + url.slice(prefix.length) : input, init);
+    return originalFetch(input, init);
 }};
 """
 parent = """<!doctype html><iframe id="game"></iframe><script>
@@ -43,12 +42,12 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == '/upstream/page.html':
             body = f'<html><head><base href="https://cdn.jsdelivr.net/gh/web-ports/celeste@{commit}/"><script type="module" src="bundle.js"></script></head><body></body></html>'.encode()
             mime = 'text/html'
-        elif self.path == '/upstream/bundle.js':
+        elif self.path == '/celeste-assets/' + commit + '/bundle.js':
             body = b"import {value} from './_framework/dotnet.js'; await WebAssembly.instantiateStreaming(fetch('_framework/runtime.wasm')); window.celesteModuleLoaded=value;"
             mime = 'text/plain'
-        elif self.path == '/upstream/_framework/dotnet.js':
+        elif self.path == '/celeste-assets/' + commit + '/_framework/dotnet.js':
             body, mime = b'export const value=42;', 'text/plain'
-        elif self.path == '/upstream/_framework/runtime.wasm':
+        elif self.path == '/celeste-assets/' + commit + '/_framework/runtime.wasm':
             body, mime = b'\x00asm\x01\x00\x00\x00', 'application/octet-stream'
         else:
             self.send_error(404)

@@ -163,7 +163,7 @@ function mimeFor(path) {
 }
 
 async function celesteAsset(commit, path) {
-    const res = await fetch("https://raw.githubusercontent.com/web-ports/celeste/" + commit + "/" + path, { cache: "force-cache" });
+    const res = await fetch(self.location.origin + "/celeste-assets/" + commit + "/" + path, { cache: "force-cache" });
     return new Response(res.body, {
         status: res.status,
         headers: {

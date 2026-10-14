@@ -37,6 +37,13 @@ jobs:
           ref: main
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Cache Celeste assets
+        uses: actions/cache@v4
+        with:
+          path: celeste-assets/4f043a5ce121b74dc54ce56d74f213a2eeea6b4e
+          key: celeste-assets-4f043a5ce121b74dc54ce56d74f213a2eeea6b4e-v1
+      - name: Prepare Celeste assets
+        run: bash .github/scripts/prepare-celeste.sh
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

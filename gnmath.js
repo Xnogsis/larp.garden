@@ -169,7 +169,16 @@ window.lgDebug = (win) => {
     win.performance.setResourceTimingBufferSize(5000);
     win.addEventListener("error", (e) => {
         const el = e.target;
-        if (el && el !== win && (el.src || el.href)) note("load failed", el.localName + " " + (el.src || el.href));
+        if (el && el !== win && (el.src || el.href)) {
+            const url = new URL(el.src || el.href, win.location.href);
+            note("load failed", el.localName + " " + url.href);
+            if (url.origin === location.origin && /^https?:$/.test(url.protocol)) {
+                win.fetch(url.href, { method: "HEAD", cache: "no-store" }).then(
+                    (r) => note("asset HEAD", r.status + " " + r.headers.get("content-type") + " " + url.href),
+                    (e) => note("asset HEAD failed", e.message + " " + url.href)
+                );
+            }
+        }
         else note("error", e.message + (e.filename ? " @ " + e.filename + ":" + e.lineno : ""));
     }, true);
     win.addEventListener("unhandledrejection", (e) => note("rejection", describe(e.reason)));
