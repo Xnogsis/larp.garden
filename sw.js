@@ -24,6 +24,11 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    // Keep Celeste's module imports and runtime files on one GitHub-backed asset path.
+    ["cdn.jsdelivr.net/gh/web-ports/celeste@", (body) => body.replace(
+        /https:\/\/cdn\.jsdelivr\.net\/gh\/web-ports\/celeste@([a-f0-9]{40})\//g,
+        self.location.origin + "/celeste-assets/$1/"
+    )],
     // Draw Climber's egret build draws nothing on some WebGL/ANGLE drivers (black canvas,
     // no errors). Its 2D canvas renderer paints correctly.
     ["yrgen73/draw-cl", (body) => body.replace(/renderMode:\s*"webgl"/g, 'renderMode: "canvas"')],
@@ -157,6 +162,17 @@ function mimeFor(path) {
     return MIME[ext] || null;
 }
 
+async function celesteAsset(commit, path) {
+    const res = await fetch("https://raw.githubusercontent.com/web-ports/celeste/" + commit + "/" + path, { cache: "force-cache" });
+    return new Response(res.body, {
+        status: res.status,
+        headers: {
+            "Content-Type": mimeFor(path) || res.headers.get("content-type") || "application/octet-stream",
+            "Cache-Control": res.ok ? "public, max-age=86400" : "no-store",
+        },
+    });
+}
+
 // Hub pages are only meant to live inside this site's iframe; opened as the top
 // window they would show the hub path in the address bar, so bounce to the 404
 // page (the saved cookie reopens the hub properly from there).
@@ -262,6 +278,12 @@ self.addEventListener("fetch", (event) => {
             } catch (_) { /* fall back to the original */ }
             return fetch(req);
         })());
+        return;
+    }
+
+    const celeste = /^\/celeste-assets\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
+    if (celeste) {
+        event.respondWith(celesteAsset(celeste[1], celeste[2]));
         return;
     }
 
