@@ -82,3 +82,10 @@ jobs:
           for asset in index.html consolewrapper.js game.js game.data love.js love.wasm theme/love.css; do
             curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/balatro/$asset" >/dev/null
           done
+      - name: Verify published Ruffle assets
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          git ls-files ruffle | while IFS= read -r asset; do
+            curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/$asset" >/dev/null
+          done

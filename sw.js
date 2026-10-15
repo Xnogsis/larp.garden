@@ -8,6 +8,8 @@
 // narrows what such a page can do, but cannot isolate it from the origin.
 const REPOS = ["Xnogsis/html"];
 const BRANCH = "main";
+const RUFFLE_PATH = "/ruffle/0.2.0-nightly.2025.10.2/";
+const RUFFLE_CDN_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/npm\/|esm\.sh\/)@ruffle-rs\/ruffle@0\.2\.0-nightly\.2025\.10\.2\/([\w.-]+)(?:[?#]|$)/;
 
 // Games whose gn-math page is broken, replaced by a self-contained copy: the page
 // redirects to the copy's index.html, and the copy's folder is fetched only from its
@@ -24,6 +26,10 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    ["@ruffle-rs/ruffle@0.2.0-nightly.2025.10.2/", (body) => body.replace(
+        /https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/npm\/@ruffle-rs\/ruffle@0\.2\.0-nightly\.2025\.10\.2\//g,
+        self.location.origin + RUFFLE_PATH
+    ).replace(/ruffle\.min\.js/g, "ruffle.js")],
     // Keep Celeste's module imports and runtime files on one GitHub-backed asset path.
     ["cdn.jsdelivr.net/gh/web-ports/celeste@", (body) => body.replace(
         /https:\/\/cdn\.jsdelivr\.net\/gh\/web-ports\/celeste@([a-f0-9]{40})\//g,
@@ -109,6 +115,11 @@ async function fixedC3Runtime(request) {
 
 // Cross-origin files that games request and that need replacing: [URL pattern, handler].
 const CROSS_ORIGIN_FIXES = [
+    // Encrypted upstream loaders still construct CDN URLs at runtime.
+    [RUFFLE_CDN_RE, (req) => {
+        const file = RUFFLE_CDN_RE.exec(req.url)[1].replace(/^ruffle\.min\.js$/, "ruffle.js");
+        return fetch(self.location.origin + RUFFLE_PATH + file, { cache: "force-cache" });
+    }],
     [BROKEN_C3_RE, (req) => fixedC3Runtime(req).catch(() => fetch(req))],
     [YTGAME_RE, () => new Response(YTGAME_STUB, {
         headers: { "Content-Type": "text/javascript", "Cache-Control": "public, max-age=86400" },
@@ -222,6 +233,9 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path, hub = "gnmath") {
+    if (hub === "gnmath" && /^113(?:\D[^/]*)?\.html$/.test(path)) {
+        return Response.redirect(self.location.origin + "/ruffle/standalone-113/index.html", 302);
+    }
     if (hub === "gnmath" && /^119(?:\D[^/]*)?\.html$/.test(path)) {
         return Response.redirect(self.location.origin + "/snow-rider-assets/6b7c2b9167b592528b221428414e63f06c4640b9/index.html", 302);
     }
@@ -288,6 +302,8 @@ self.addEventListener("fetch", (event) => {
         })());
         return;
     }
+
+    if (url.pathname.startsWith("/ruffle/")) return;
 
     const hosted = /^\/(celeste-assets|snow-rider-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
     if (hosted) {
