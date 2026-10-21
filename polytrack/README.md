@@ -9,6 +9,9 @@ The asynchronous Blob-worker wrapper was removed: it could pass
 `undefined` to the Worker constructor before its download completed. Workers
 now use the native same-origin constructor and load matching local Ammo files.
 The upstream API URL handling is preserved; online services remain external.
+Failed UI image preloads are marked finished so an unavailable decorative
+asset cannot stall the loading screen.
 
 Run `python3 tests/polytrack.py` to check worker startup and an official race
-with third-party requests blocked and worker downloads deliberately delayed.
+with third-party requests blocked, worker downloads deliberately delayed, and
+the grid icon request failing.

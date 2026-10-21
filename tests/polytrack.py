@@ -50,7 +50,8 @@ try:
         context = browser.new_context(viewport={'width': 900, 'height': 550})
         origin = f'http://127.0.0.1:{server.server_port}'
         context.route('**/*', lambda route: route.continue_()
-                      if route.request.url.startswith(origin + '/') else route.abort())
+                      if route.request.url.startswith(origin + '/')
+                      and not route.request.url.endswith('/images/grid_small.svg') else route.abort())
         context.add_init_script('''
             // Keep software rendering inexpensive in the test container.
             localStorage.setItem('polytrack_v4_prod_settings', JSON.stringify([
@@ -84,7 +85,10 @@ try:
         ''')
         page = context.new_page()
         errors = []
+        failed_images = []
         page.on('pageerror', lambda error: errors.append(str(error)))
+        page.on('requestfailed', lambda request: failed_images.append(request.url)
+                if request.url.endswith('/images/grid_small.svg') else None)
         page.goto(origin)
         page.wait_for_function("document.querySelector('#game').contentWindow.location.pathname === '/polytrack/index.html'")
         game = page.frames[1]
@@ -106,9 +110,10 @@ try:
         page.screenshot(path='/tmp/polytrack-play.png')
         assert not errors, errors
         assert not missing, missing
+        assert failed_images, 'The failed image regression was not exercised'
         assert game.evaluate('physicsWorkers.length >= 2 && physicsWorkers.every(w => w.url === location.origin + "/polytrack/simulation_worker.bundle.js")')
         browser.close()
-    print('Passed: local Polytrack menu and driving physics, hub redirect, native workers with delayed downloads and external requests blocked')
+    print('Passed: Polytrack menu and driving physics despite a failed grid image, delayed workers, and blocked external requests')
 finally:
     server.shutdown()
     server.server_close()

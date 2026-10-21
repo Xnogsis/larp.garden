@@ -30081,7 +30081,7 @@
                 t.addEventListener("load", (() => {
                     this.loadedResource()
                 })), t.addEventListener("error", (() => {
-                    console.error("Failed to preload image: " + e)
+                    console.warn("Failed to preload optional image: " + e), this.loadedResource()
                 })), t.src = e
             }
         };
