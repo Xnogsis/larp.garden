@@ -23,6 +23,8 @@ try:
         origin = f'http://127.0.0.1:{server.server_port}'
         context.route('**/*', lambda route: route.continue_()
                       if route.request.url.startswith(origin + '/') else route.abort())
+        context.route('**/hub/**', lambda route: route.fulfill(
+            content_type='text/html', body='<!doctype html><title>Notice test game</title>Test game'))
         page = context.new_page()
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
@@ -33,12 +35,17 @@ try:
 
         for tab in ['Games', 'UGS', 'Home']:
             page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
+            text.wait_for()
             assert text.count() == 1
             assert text.inner_text() == "notepad method patched soon, don't get caught with x-vpn."
             assert text.evaluate('(el) => el.getAnimations()[0].currentTime') >= 10000
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
 
+        page.locator('.home-notice-window').hover()
+        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
+
         toggle.click()
+        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'paused'
         page.mouse.move(0, 500)
         toggle.evaluate('(el) => el.blur()')
         stopped = text.evaluate('(el) => el.getAnimations()[0].currentTime')
@@ -50,9 +57,31 @@ try:
         assert toggle.get_attribute('aria-pressed') == 'true'
         assert abs(text.evaluate('(el) => el.getAnimations()[0].currentTime') - stopped) < 100
         toggle.click()
+        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
         page.mouse.move(0, 500)
         toggle.evaluate('(el) => el.blur()')
         assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
+
+        for width in [1440, 360]:
+            page.set_viewport_size({'width': width, 'height': 800})
+            for tab in ['Games', 'UGS']:
+                page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
+                before = text.evaluate('(el) => el.getAnimations()[0].currentTime')
+                page.evaluate('openZone({id: 999, name: "Notice test game", url: "{HTML_URL}/notice-test.html"})')
+                page.locator('#viewer.open').wait_for()
+                page.wait_for_function('''() => document.querySelector('#viewer').getBoundingClientRect().top
+                    >= document.querySelector('#top').getBoundingClientRect().bottom''')
+                assert text.evaluate('''(el) => {
+                    const box = el.parentElement.getBoundingClientRect();
+                    return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2).closest('#top') !== null;
+                }''')
+                assert text.evaluate('(el) => el.getAnimations()[0].currentTime') >= before
+                page.locator('.home-notice-window').hover()
+                assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
+                page.get_by_role('button', name='hide bar', exact=True).click()
+                assert page.locator('#viewer').bounding_box()['y'] >= page.locator('#top').bounding_box()['height']
+                page.locator('#showbar').click()
+                page.locator('#close').click()
 
         page.set_viewport_size({'width': 360, 'height': 800})
         for tab in ['Games', 'UGS', 'Home']:
@@ -71,6 +100,6 @@ try:
         assert text.is_visible()
         assert not errors, errors
         browser.close()
-        print('Notice navigation, pause, Back, mobile, reduced motion, and disabled-storage checks passed.')
+        print('Notice navigation, hover, game viewers, pause, Back, mobile, reduced motion, and disabled-storage checks passed.')
 finally:
     server.shutdown()
