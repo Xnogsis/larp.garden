@@ -4,6 +4,7 @@ Run with python3 tests/celeste_assets.py (requires Playwright and Chromium).
 """
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import gzip
 import shutil
 from threading import Thread
 
@@ -43,12 +44,14 @@ class Handler(BaseHTTPRequestHandler):
             body = f'<html><head><base href="https://cdn.jsdelivr.net/gh/web-ports/celeste@{commit}/"><script type="module" src="bundle.js"></script></head><body></body></html>'.encode()
             mime = 'text/html'
         elif self.path == '/celeste-assets/' + commit + '/bundle.js':
-            body = b"import {value} from './_framework/dotnet.js'; await WebAssembly.instantiateStreaming(fetch('_framework/runtime.wasm')); window.celesteModuleLoaded=value;"
+            body = b"import {value} from './_framework/dotnet.js'; await WebAssembly.instantiateStreaming(fetch('_framework/runtime.wasm')); if (await (await fetch('_framework/data/data.data.part1')).text() !== 'original game data') throw new Error('Data changed'); window.celesteModuleLoaded=value;"
             mime = 'text/plain'
         elif self.path == '/celeste-assets/' + commit + '/_framework/dotnet.js':
             body, mime = b'export const value=42;', 'text/plain'
-        elif self.path == '/celeste-assets/' + commit + '/_framework/runtime.wasm':
-            body, mime = b'\x00asm\x01\x00\x00\x00', 'application/octet-stream'
+        elif self.path == '/celeste-assets/' + commit + '/_framework/runtime.wasm.gz':
+            body, mime = gzip.compress(b'\x00asm\x01\x00\x00\x00'), 'application/octet-stream'
+        elif self.path == '/celeste-assets/' + commit + '/_framework/data/data.data.part1.gz':
+            body, mime = gzip.compress(b'original game data'), 'application/gzip'
         else:
             self.send_error(404)
             return

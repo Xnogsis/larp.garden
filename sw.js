@@ -174,8 +174,9 @@ function mimeFor(path) {
 }
 
 async function hostedGameAsset(directory, commit, path) {
-    const res = await fetch(self.location.origin + "/" + directory + "/" + commit + "/" + path, { cache: "force-cache" });
-    let body = res.body;
+    const compressed = (directory === "buckshot-assets" && /\.(?:pck|wasm)$/.test(path)) || (directory === "celeste-assets" && /(?:\.wasm$|\/data\.data\.part\d+$)/.test(path));
+    const res = await fetch(self.location.origin + "/" + directory + "/" + commit + "/" + path + (compressed ? ".gz" : ""), { cache: "force-cache" });
+    let body = res.ok && compressed ? res.body.pipeThrough(new DecompressionStream("gzip")) : res.body;
     if (res.ok && mimeFor(path) === "text/html") {
         body = (await res.text()).replace(/<head[^>]*>/i, (tag) => tag
             + '<script>try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>' + ALLOW_SLOW_WEBGL);
@@ -233,6 +234,9 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path, hub = "gnmath") {
+    if (hub === "gnmath" && /^205(?:\D[^/]*)?\.html$/.test(path)) {
+        return Response.redirect(self.location.origin + "/buckshot-roulette/index.html", 302);
+    }
     if (hub === "gnmath" && /^470(?:\D[^/]*)?\.html$/.test(path)) {
         return Response.redirect(self.location.origin + "/doodle-jump/index.html", 302);
     }
@@ -309,9 +313,14 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    if (url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/")) return;
+    const buckshot = /^\/buckshot-roulette\/(buckshot-roulette\.(?:pck|wasm))$/.exec(url.pathname);
+    if (buckshot) {
+        event.respondWith(hostedGameAsset("buckshot-assets", "b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a", buckshot[1]));
+        return;
+    }
+    if (url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/") || url.pathname.startsWith("/buckshot-roulette/")) return;
 
-    const hosted = /^\/(celeste-assets|snow-rider-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
+    const hosted = /^\/(celeste-assets|snow-rider-assets|buckshot-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
     if (hosted) {
         event.respondWith(hostedGameAsset(hosted[1], hosted[2], hosted[3]));
         return;

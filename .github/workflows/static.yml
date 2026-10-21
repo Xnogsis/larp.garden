@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: celeste-assets/4f043a5ce121b74dc54ce56d74f213a2eeea6b4e
-          key: celeste-assets-4f043a5ce121b74dc54ce56d74f213a2eeea6b4e-v1
+          key: celeste-assets-4f043a5ce121b74dc54ce56d74f213a2eeea6b4e-gzip-v2
       - name: Prepare Celeste assets
         run: bash .github/scripts/prepare-celeste.sh
       - name: Cache Snow Rider assets
@@ -51,6 +51,18 @@ jobs:
           key: snow-rider-assets-6b7c2b9167b592528b221428414e63f06c4640b9-v1
       - name: Prepare Snow Rider assets
         run: bash .github/scripts/prepare-snow-rider.sh
+      - name: Cache Buckshot Roulette assets
+        uses: actions/cache@v4
+        with:
+          path: buckshot-assets/b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a
+          key: buckshot-assets-b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a-gzip-v1
+      - name: Prepare Buckshot Roulette assets
+        run: python3 .github/scripts/prepare-buckshot.py
+      - name: Check published site size
+        run: |
+          site_bytes=$(du -sb --exclude=.git . | cut -f1)
+          echo "Published site: $site_bytes bytes"
+          test "$site_bytes" -le 1000000000
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -64,7 +76,7 @@ jobs:
           PAGES_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
           asset_base="${PAGES_URL%/}/celeste-assets/4f043a5ce121b74dc54ce56d74f213a2eeea6b4e"
-          for asset in styles.css assets/mountain.png cfg.js data.js bundle.js _framework/dotnet.js _framework/FNA.wasm; do
+          for asset in styles.css assets/mountain.png cfg.js data.js bundle.js _framework/dotnet.js _framework/FNA.wasm.gz _framework/data/data.data.part1.gz; do
             curl --head --location --fail --silent --show-error --retry 6 --retry-delay 5 --retry-all-errors "$asset_base/$asset" >/dev/null
           done
       - name: Verify published Snow Rider assets
@@ -102,4 +114,14 @@ jobs:
         run: |
           for asset in index.html main.js style.css assets/2WEhF.png assets/5BBsR.png assets/Y0BMP.png assets/font.css assets/LYjYdHv3kUk9BMV96EIswT9DIbW-MIS11zM.woff2; do
             curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/doodle-jump/$asset" >/dev/null
+          done
+      - name: Verify published Buckshot Roulette assets
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for asset in index.html buckshot-roulette.js style.css buckshot-roulette.png buckshot-roulette.audio.worklet.js buckshot-roulette.audio.position.worklet.js; do
+            curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/buckshot-roulette/$asset" >/dev/null
+          done
+          for asset in buckshot-roulette.pck.gz buckshot-roulette.wasm.gz; do
+            curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/buckshot-assets/b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a/$asset" >/dev/null
           done
