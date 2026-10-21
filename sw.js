@@ -233,6 +233,9 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path, hub = "gnmath") {
+    if (hub === "gnmath" && /^470(?:\D[^/]*)?\.html$/.test(path)) {
+        return Response.redirect(self.location.origin + "/doodle-jump/index.html", 302);
+    }
     if (hub === "gnmath" && /^123(?:\D[^/]*)?\.html$/.test(path)) {
         return Response.redirect(self.location.origin + "/polytrack/index.html", 302);
     }
@@ -306,7 +309,7 @@ self.addEventListener("fetch", (event) => {
         return;
     }
 
-    if (url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/")) return;
+    if (url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/")) return;
 
     const hosted = /^\/(celeste-assets|snow-rider-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
     if (hosted) {
