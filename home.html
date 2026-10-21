@@ -8,15 +8,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header id="top" class="home-top">
+    <header id="top" class="notice-top">
         <a class="brand" href="home.html">larp.garden</a>
         <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a></nav>
-        <div class="home-notice">
-            <div class="home-notice-window"><span>notepad method patched soon, don't get caught with x-vpn.</span></div>
-            <button type="button" class="home-notice-toggle" aria-label="Pause scrolling notice" aria-pressed="false">Pause</button>
-        </div>
         <button type="button" id="theme">Light</button>
     </header>
+    <script src="notice.js"></script>
 
     <main class="home">
         <div>
@@ -52,6 +49,7 @@
                 <article>
                     <time datetime="2026-10-21">October 21, 2026</time>
                     <ul>
+                        <li>The scrolling notice now appears on Home, Games, and UGS and keeps its position and pause setting when switching tabs.</li>
                         <li>Added a scrolling notice to the Home header, with soft fades and a pause control.</li>
                         <li>Polytrack now finishes loading even when a UI image fails to download.</li>
                     </ul>
@@ -127,14 +125,6 @@
 
     <script>
         const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
-
-        const noticeToggle = document.querySelector('.home-notice-toggle');
-        noticeToggle.addEventListener('click', () => {
-            const paused = noticeToggle.parentElement.classList.toggle('paused');
-            noticeToggle.setAttribute('aria-pressed', String(paused));
-            noticeToggle.setAttribute('aria-label', paused ? 'Resume scrolling notice' : 'Pause scrolling notice');
-            noticeToggle.textContent = paused ? 'Resume' : 'Pause';
-        });
 
         const garfieldBox = document.getElementById('garfield');
         fetch('garfield.json', { cache: 'no-cache' })
