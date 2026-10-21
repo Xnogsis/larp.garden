@@ -69,17 +69,13 @@ try:
                 before = text.evaluate('(el) => el.getAnimations()[0].currentTime')
                 page.evaluate('openZone({id: 999, name: "Notice test game", url: "{HTML_URL}/notice-test.html"})')
                 page.locator('#viewer.open').wait_for()
-                page.wait_for_function('''() => document.querySelector('#viewer').getBoundingClientRect().top
-                    >= document.querySelector('#top').getBoundingClientRect().bottom''')
-                assert text.evaluate('''(el) => {
-                    const box = el.parentElement.getBoundingClientRect();
-                    return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2).closest('#top') !== null;
-                }''')
+                assert page.locator('#viewer').bounding_box()['y'] == 0
+                assert page.locator('#viewer').bounding_box()['height'] == 800
                 assert text.evaluate('(el) => el.getAnimations()[0].currentTime') >= before
-                page.locator('.home-notice-window').hover()
                 assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
                 page.get_by_role('button', name='hide bar', exact=True).click()
-                assert page.locator('#viewer').bounding_box()['y'] >= page.locator('#top').bounding_box()['height']
+                assert page.locator('#frame').bounding_box()['height'] == 800
+                assert page.locator('#showbar').bounding_box()['y'] == 0
                 page.locator('#showbar').click()
                 page.locator('#close').click()
 

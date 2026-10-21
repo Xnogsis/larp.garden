@@ -5,11 +5,6 @@
         <button type="button" class="home-notice-toggle" aria-label="Pause scrolling notice" aria-pressed="false">Pause</button>`;
     document.getElementById('theme').before(notice);
 
-    const header = document.getElementById('top');
-    new ResizeObserver(() => {
-        document.documentElement.style.setProperty('--site-header-height', Math.ceil(header.getBoundingClientRect().height) + 'px');
-    }).observe(header);
-
     const toggle = notice.querySelector('button');
     const text = notice.querySelector('span');
     const key = 'header-notice';

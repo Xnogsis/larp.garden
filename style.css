@@ -94,7 +94,7 @@ h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacin
 footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
 
 /* game viewer */
-#viewer { display: none; position: fixed; inset: var(--site-header-height, 56px) 0 0; z-index: 2; background: var(--bg); }
+#viewer { display: none; position: fixed; inset: 0; z-index: 2; background: var(--bg); }
 #viewer.open { display: flex; flex-direction: column; }
 #viewer-bar {
     display: flex;
@@ -109,7 +109,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 #viewer-author { color: var(--muted); margin-right: 8px; }
 #viewer-bar button { padding: 2px 10px; }
 #frame { flex: 1; border: 0; width: 100%; }
-#showbar { display: none; position: fixed; top: var(--site-header-height, 56px); right: 0; padding: 0 8px; background: var(--bg); border-width: 0 0 1px 1px; opacity: .5; }
+#showbar { display: none; position: fixed; top: 0; right: 0; padding: 0 8px; background: var(--bg); border-width: 0 0 1px 1px; opacity: .5; }
 #showbar:hover { opacity: 1; }
 #viewer.nobar #viewer-bar { display: none; }
 #viewer.nobar #showbar { display: block; }
