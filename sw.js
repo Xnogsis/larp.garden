@@ -234,6 +234,9 @@ async function firstOk(repos, path, tried) {
 }
 
 async function fromMirrors(path, hub = "gnmath") {
+    if (hub === "gnmath" && /^387(?:\D[^/]*)?\.html$/.test(path)) {
+        return Response.redirect(self.location.origin + "/draw-joust/index.html", 302);
+    }
     if (hub === "gnmath" && /^205(?:\D[^/]*)?\.html$/.test(path)) {
         return Response.redirect(self.location.origin + "/buckshot-roulette/index.html", 302);
     }
@@ -318,7 +321,7 @@ self.addEventListener("fetch", (event) => {
         event.respondWith(hostedGameAsset("buckshot-assets", "b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a", buckshot[1]));
         return;
     }
-    if (url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/") || url.pathname.startsWith("/buckshot-roulette/")) return;
+    if (url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/") || url.pathname.startsWith("/buckshot-roulette/") || url.pathname.startsWith("/draw-joust/")) return;
 
     const hosted = /^\/(celeste-assets|snow-rider-assets|buckshot-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
     if (hosted) {

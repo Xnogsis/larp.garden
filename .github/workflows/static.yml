@@ -125,3 +125,10 @@ jobs:
           for asset in buckshot-roulette.pck.gz buckshot-roulette.wasm.gz; do
             curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/buckshot-assets/b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a/$asset" >/dev/null
           done
+      - name: Verify published Draw Joust assets
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for asset in index.html platform.js logo.png background.jpg TemplateData/style.css Build/DrawJoustAB.loader.js Build/DrawJoustAB.framework.js.unityweb Build/DrawJoustAB.wasm.unityweb Build/DrawJoustAB.data.unityweb; do
+            curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/draw-joust/$asset" >/dev/null
+          done
