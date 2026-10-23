@@ -1,7 +1,7 @@
 (() => {
     const notice = document.createElement('div');
     notice.className = 'home-notice';
-    notice.innerHTML = `<div class="home-notice-window"><span>notepad method patched soon, don't get caught with x-vpn.</span></div>
+    notice.innerHTML = `<div class="home-notice-window"><span>r.i.p librewolf and xvpn</span></div>
         <button type="button" class="home-notice-toggle" aria-label="Pause scrolling notice" aria-pressed="false">Pause</button>`;
     document.getElementById('theme').before(notice);
 

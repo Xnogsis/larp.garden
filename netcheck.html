@@ -61,16 +61,16 @@ const checkPaths = () => PATHS.forEach(path =>
     .then(res => postMessage({ ctx: "path", req: path, res }, "*")));
 document.getElementById("run").onclick = () => {
   checkPaths();
-  // 1. this page (larp.garden origin, larp.garden tab)
-  eval(PROBE)("larp.garden page", window);
-  // 2. about:blank popup written from here, like UGS does (larp.garden origin, about:blank tab)
+  // 1. this page (larp.surf origin, larp.surf tab)
+  eval(PROBE)("larp.surf page", window);
+  // 2. about:blank popup written from here, like UGS does (larp.surf origin, about:blank tab)
   const w = open("about:blank", "_blank");
   if (w) { w.document.open(); w.document.write(html("about:blank popup")); w.document.close(); }
   else lines.push("popup blocked");
-  // 3. sandboxed iframe (no origin, larp.garden tab)
+  // 3. sandboxed iframe (no origin, larp.surf tab)
   const sb = document.createElement("iframe");
   sb.sandbox = "allow-scripts"; sb.srcdoc = html("sandboxed iframe"); sb.hidden = true;
-  // 4. data: iframe (no origin, larp.garden tab)
+  // 4. data: iframe (no origin, larp.surf tab)
   const du = document.createElement("iframe");
   du.src = "data:text/html," + encodeURIComponent(html("data: iframe")); du.hidden = true;
   document.body.append(sb, du);

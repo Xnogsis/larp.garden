@@ -37,7 +37,7 @@ try:
             page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
             text.wait_for()
             assert text.count() == 1
-            assert text.inner_text() == "notepad method patched soon, don't get caught with x-vpn."
+            assert text.inner_text() == "r.i.p librewolf and xvpn"
             assert text.evaluate('(el) => el.getAnimations()[0].currentTime') >= 10000
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
 
@@ -87,7 +87,8 @@ try:
         page.emulate_media(reduced_motion='reduce')
         assert text.evaluate('(el) => getComputedStyle(el).animationName') == 'none'
         assert toggle.is_hidden()
-        assert text.bounding_box()['height'] > 25
+        assert text.bounding_box()['height'] > 0
+        assert text.bounding_box()['width'] <= page.locator('.home-notice-window').bounding_box()['width']
         assert not errors, errors
 
         # Browsers that disable storage should still display a working notice.
