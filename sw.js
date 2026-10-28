@@ -10,6 +10,8 @@ const REPOS = ["Xnogsis/html"];
 const BRANCH = "main";
 const RUFFLE_PATH = "/ruffle/0.2.0-nightly.2025.10.2/";
 const RUFFLE_CDN_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/npm\/|esm\.sh\/)@ruffle-rs\/ruffle@0\.2\.0-nightly\.2025\.10\.2\/([\w.-]+)(?:[?#]|$)/;
+const BURRITO_COMMIT = "9cf433220236bb0471ab3a68ec8fe3e0a2799e36";
+const BURRITO_LOADER_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net|esm\.sh)\/gh\/bubbls\/UGS-Assets@[^/]+\/BurritoBison-main\/(UnityProgress\.js|burrito-bison-ll\.(?:js|json)|kongregate_api\.js|style\.css)(?:[?#]|$)/;
 
 // Games whose gn-math page is broken, replaced by a self-contained copy: the page
 // redirects to the copy's index.html, and the copy's folder is fetched only from its
@@ -26,6 +28,10 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    ["bubbls/UGS-Assets@main/BurritoBison-main/", (body) => body.replaceAll(
+        "bubbls/UGS-Assets@main/BurritoBison-main/",
+        "bubbls/UGS-Assets@" + BURRITO_COMMIT + "/BurritoBison-main/"
+    )],
     ["@ruffle-rs/ruffle@0.2.0-nightly.2025.10.2/", (body) => body.replace(
         /https:\/\/(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/npm\/@ruffle-rs\/ruffle@0\.2\.0-nightly\.2025\.10\.2\//g,
         self.location.origin + RUFFLE_PATH
@@ -115,6 +121,8 @@ async function fixedC3Runtime(request) {
 
 // Cross-origin files that games request and that need replacing: [URL pattern, handler].
 const CROSS_ORIGIN_FIXES = [
+    // Opaque CDN script failures cannot trigger the generic mirror fallback.
+    [BURRITO_LOADER_RE, (req) => fetch(self.location.origin + "/burrito-bison/" + BURRITO_LOADER_RE.exec(req.url)[1])],
     // Encrypted upstream loaders still construct CDN URLs at runtime.
     [RUFFLE_CDN_RE, (req) => {
         const file = RUFFLE_CDN_RE.exec(req.url)[1].replace(/^ruffle\.min\.js$/, "ruffle.js");
@@ -197,7 +205,7 @@ const UNFRAME_QUERY = "?unframed";
 // It also hands the page's window to the catalog's debug panel (gnmath.js lgDebug), if the parent has one.
 const STAY_FRAMED = '<script>if(top===self)location.replace("/' + UNFRAME_QUERY + '");try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>';
 // Synchronous XHRs bypass the service worker, so hub pages reroute those in the page.
-const ESM_SYNC_XHR = `<script>(()=>{const JSDELIVR_RE=${JSDELIVR_RE};const viaEsm=${viaEsm};const open=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u,a,...r){if(a===false)u=viaEsm(new URL(u,document.baseURI).href);return open.call(this,m,u,a,...r)}})()</script>`;
+const ESM_SYNC_XHR = `<script>(()=>{const JSDELIVR_RE=${JSDELIVR_RE};const viaEsm=${viaEsm};const open=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u,a=true,...r){if(a===false)u=viaEsm(new URL(u,document.baseURI).href);return open.call(this,m,u,a,...r)}})()</script>`;
 
 // Some engines (e.g. Bowmasters' PixiJS) ask for failIfMajorPerformanceCaveat, so on
 // software-rendered GPUs (Microsoft Basic Render Driver) they get no WebGL and draw nothing.
@@ -324,7 +332,7 @@ self.addEventListener("fetch", (event) => {
         event.respondWith(hostedGameAsset("buckshot-assets", "b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a", buckshot[1]));
         return;
     }
-    if (url.pathname.startsWith("/slope/") || url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/") || url.pathname.startsWith("/buckshot-roulette/") || url.pathname.startsWith("/draw-joust/")) return;
+    if (url.pathname.startsWith("/burrito-bison/") || url.pathname.startsWith("/slope/") || url.pathname.startsWith("/ruffle/") || url.pathname.startsWith("/polytrack/") || url.pathname.startsWith("/doodle-jump/") || url.pathname.startsWith("/buckshot-roulette/") || url.pathname.startsWith("/draw-joust/")) return;
 
     const hosted = /^\/(celeste-assets|snow-rider-assets|buckshot-assets)\/([a-f0-9]{40})\/(.+)$/.exec(url.pathname);
     if (hosted) {
