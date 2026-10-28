@@ -115,6 +115,13 @@ jobs:
           for asset in index.html main.js style.css assets/2WEhF.png assets/5BBsR.png assets/Y0BMP.png assets/font.css assets/LYjYdHv3kUk9BMV96EIswT9DIbW-MIS11zM.woff2; do
             curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/doodle-jump/$asset" >/dev/null
           done
+      - name: Verify published Slope assets
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for asset in index.html slope.js Build/UnityLoader.js Build/WEB1.2.1.data.unityweb.part1 Build/WEB1.2.1.data.unityweb.part2 Build/WEB1.2.1.wasm.code.unityweb Build/WEB1.2.1.wasm.framework.unityweb; do
+            curl --head --location --fail --silent --show-error --connect-timeout 10 --max-time 60 --retry 6 --retry-delay 5 --retry-all-errors "${PAGES_URL%/}/slope/$asset" >/dev/null
+          done
       - name: Verify published Buckshot Roulette assets
         env:
           PAGES_URL: ${{ steps.deployment.outputs.page_url }}

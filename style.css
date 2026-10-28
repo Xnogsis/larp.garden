@@ -192,9 +192,6 @@ aside p:last-child { margin-bottom: 0; }
 .tv { max-width: 800px; }
 .tv section { margin-top: 32px; }
 .tv li + li { margin-top: 12px; }
-.tv-action { display: inline-block; padding: 12px 16px; border: 1px solid var(--fg); text-decoration: none; }
-.tv-action:hover { background: var(--hover); }
-.tv-action span { color: var(--muted); }
 .tv form { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
 .tv label { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 100px; }
 .tv input, .tv select { width: 100%; padding: 10px; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); }

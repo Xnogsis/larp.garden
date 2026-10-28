@@ -21,9 +21,11 @@ try:
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(origin + '/home.html')
-            page.get_by_role('link', name='tv', exact=True).click()
+            page.get_by_role('link', name='Tv', exact=True).click()
             assert page.url == origin + '/tv.html'
-            assert page.locator('nav [aria-current]').inner_text() == 'tv'
+            assert page.locator('nav [aria-current]').inner_text() == 'Tv'
+            assert page.locator('.tv-action').count() == 0
+            assert page.locator('#tv-form').bounding_box()['y'] < page.locator('#tv-help').bounding_box()['y']
             for theme in ('dark', 'light'):
                 if page.locator('html').evaluate("el => el.classList.contains('dark')") != (theme == 'dark'):
                     page.locator('#theme').click()

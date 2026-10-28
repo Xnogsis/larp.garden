@@ -3,30 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>larp.surf / tv</title>
+    <title>larp.surf / Tv</title>
     <script>try { if (localStorage.theme !== "light") document.documentElement.classList.add("dark"); } catch { document.documentElement.classList.add("dark"); }</script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header id="top" class="notice-top">
         <a class="brand" href="home.html">larp.surf</a>
-        <nav><a href="home.html">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a><a href="tv.html" aria-current="page">tv</a></nav>
+        <nav><a href="home.html">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a><a href="tv.html" aria-current="page">Tv</a></nav>
         <button type="button" id="theme">Light</button>
     </header>
     <script src="notice.js"></script>
     <main class="tv">
-        <h1>tv</h1>
+        <h1>Tv</h1>
         <p class="lede">Find a title with TMDB Search, then enter its ID to watch.</p>
-        <p><a class="tv-action" href="https://www.tmdbsearch.com/" target="_blank" rel="noopener noreferrer">Search movies and shows <span>(opens a new tab)</span></a></p>
-        <section aria-labelledby="tv-help">
-            <h2 id="tv-help">Finding a title</h2>
-            <ol>
-                <li>Open TMDB Search and search for the movie or show you want.</li>
-                <li>Check the title and release year so you choose the right result.</li>
-                <li>Choose Movie or TV show below and copy the title's numeric TMDB ID into the form. Use the ID, not its name or an IMDb ID.</li>
-                <li>For TV shows, choose a season and episode. Select Load player, then press Play. Playback is provided by 0vidads; availability depends on the provider.</li>
-            </ol>
-        </section>
+
         <section aria-labelledby="tv-provider">
             <h2 id="tv-provider">Watch</h2>
             <form id="tv-form">
@@ -42,6 +33,15 @@
                 <iframe id="tv-frame" title="0vidads TV player" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="no-referrer"></iframe>
                 <p>The player is hosted by 0vidads. If it stays blank or playback fails, check the ID, season, and episode, or <a id="tv-external" target="_blank" rel="noopener noreferrer">open the player in a new tab</a>.</p>
             </div>
+        </section>
+        <section aria-labelledby="tv-help">
+            <h2 id="tv-help">Finding a title</h2>
+            <ol>
+                <li>Open <a href="https://www.tmdbsearch.com/" target="_blank" rel="noopener noreferrer">TMDB Search (new tab)</a> and search for the movie or show you want.</li>
+                <li>Check the title and release year so you choose the right result.</li>
+                <li>Choose Movie or TV show above and copy the title's numeric TMDB ID into the form. Use the ID, not its name or an IMDb ID.</li>
+                <li>For TV shows, choose a season and episode. Select Load player, then press Play. Playback is provided by 0vidads; availability depends on the provider.</li>
+            </ol>
         </section>
     </main>
     <script src="tv.js"></script>
