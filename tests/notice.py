@@ -1,10 +1,9 @@
-"""Check the shared header notice across navigation and reduced-motion layouts."""
+"""Check notice removal, hidden Tv navigation, and game viewer regressions."""
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 import shutil
 from threading import Thread
-
 from playwright.sync_api import sync_playwright
 
 
@@ -19,84 +18,42 @@ Thread(target=server.serve_forever, daemon=True).start()
 try:
     with sync_playwright() as p:
         browser = p.chromium.launch(executable_path=shutil.which('chromium'))
-        context = browser.new_context(viewport={'width': 1440, 'height': 900}, service_workers='block')
+        context = browser.new_context(service_workers='block')
         origin = f'http://127.0.0.1:{server.server_port}'
         context.route('**/*', lambda route: route.continue_()
                       if route.request.url.startswith(origin + '/') else route.abort())
         context.route('**/hub/**', lambda route: route.fulfill(
-            content_type='text/html', body='<!doctype html><title>Notice test game</title>Test game'))
+            content_type='text/html', body='<!doctype html><title>Test game</title>Test game'))
         page = context.new_page()
-        errors = []
+        errors, requests = [], []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        page.goto(origin + '/home.html')
-        text = page.locator('.home-notice-window span')
-        toggle = page.locator('.home-notice-toggle')
-        text.evaluate('(el) => el.getAnimations()[0].currentTime = 10000')
-
-        for tab in ['Games', 'UGS', 'Home']:
-            page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
-            text.wait_for()
-            assert text.count() == 1
-            assert text.inner_text() == "r.i.p librewolf and xvpn"
-            assert text.evaluate('(el) => el.getAnimations()[0].currentTime') >= 10000
-            assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
-
-        page.locator('.home-notice-window').hover()
-        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
-
-        toggle.click()
-        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'paused'
-        page.mouse.move(0, 500)
-        toggle.evaluate('(el) => el.blur()')
-        stopped = text.evaluate('(el) => el.getAnimations()[0].currentTime')
-        page.locator('#top nav').get_by_role('link', name='Games', exact=True).click()
-        assert toggle.get_attribute('aria-pressed') == 'true'
-        assert abs(text.evaluate('(el) => el.getAnimations()[0].currentTime') - stopped) < 100
-        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'paused'
-        page.go_back()
-        assert toggle.get_attribute('aria-pressed') == 'true'
-        assert abs(text.evaluate('(el) => el.getAnimations()[0].currentTime') - stopped) < 100
-        toggle.click()
-        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
-        page.mouse.move(0, 500)
-        toggle.evaluate('(el) => el.blur()')
-        assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
-
-        for width in [1440, 360]:
+        page.on('request', lambda request: requests.append(request.url))
+        for width in [320, 390, 768, 1440]:
             page.set_viewport_size({'width': width, 'height': 800})
+            page.goto(origin + '/home.html')
+            for tab in ['Games', 'UGS', 'Home']:
+                page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
+                assert page.locator('a[href="tv.html"]').count() == 0
+                assert page.locator('.home-notice').count() == 0
+                assert page.get_by_role('button', name='Pause', exact=True).count() == 0
+                assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            if width == 320:
+                continue
             for tab in ['Games', 'UGS']:
                 page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
-                before = text.evaluate('(el) => el.getAnimations()[0].currentTime')
-                page.evaluate('openZone({id: 999, name: "Notice test game", url: "{HTML_URL}/notice-test.html"})')
+                page.wait_for_function('typeof openZone === "function"')
+                page.evaluate('openZone({id: 999, name: "Test game", url: "{HTML_URL}/test-game.html"})')
                 page.locator('#viewer.open').wait_for()
                 assert page.locator('#viewer').bounding_box()['y'] == 0
                 assert page.locator('#viewer').bounding_box()['height'] == 800
-                assert text.evaluate('(el) => el.getAnimations()[0].currentTime') >= before
-                assert text.evaluate('(el) => getComputedStyle(el).animationPlayState') == 'running'
                 page.get_by_role('button', name='hide bar', exact=True).click()
                 assert page.locator('#frame').bounding_box()['height'] == 800
-                assert page.locator('#showbar').bounding_box()['y'] == 0
                 page.locator('#showbar').click()
                 page.locator('#close').click()
-
-        page.set_viewport_size({'width': 360, 'height': 800})
-        for tab in ['Games', 'UGS', 'Home']:
-            page.locator('#top nav').get_by_role('link', name=tab, exact=True).click()
-            assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
-            assert page.locator('.home-notice-window').bounding_box()['width'] > 100
-        page.emulate_media(reduced_motion='reduce')
-        assert text.evaluate('(el) => getComputedStyle(el).animationName') == 'none'
-        assert toggle.is_hidden()
-        assert text.bounding_box()['height'] > 0
-        assert text.bounding_box()['width'] <= page.locator('.home-notice-window').bounding_box()['width']
-        assert not errors, errors
-
-        # Browsers that disable storage should still display a working notice.
-        context.add_init_script("Object.defineProperty(window, 'sessionStorage', {get() {throw new Error('disabled');}})")
-        page.reload()
-        assert text.is_visible()
+        assert not any(url.endswith('/notice.js') for url in requests)
         assert not errors, errors
         browser.close()
-        print('Notice navigation, hover, game viewers, pause, Back, mobile, reduced motion, and disabled-storage checks passed.')
+        print('Passed: notice removal, hidden Tv links and navigation at four widths; full-height game viewers')
 finally:
     server.shutdown()
+    server.server_close()

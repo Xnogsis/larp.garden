@@ -119,36 +119,9 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 #debug pre { margin: 0; padding: 8px 12px; overflow: auto; font: 12px/1.4 var(--mono); white-space: pre-wrap; word-break: break-all; }
 
 /* home */
-#top.notice-top nav { flex: 0 0 auto; }
-.home-notice { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; font-size: 14px; }
-.home-notice-window {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
-}
-.home-notice-window span {
-    display: inline-block;
-    padding-left: 100%;
-    white-space: nowrap;
-    animation: home-notice-scroll 28s linear infinite;
-}
-.home-notice-toggle { border: 0; padding: 4px; color: var(--muted); font-size: 12px; }
-.home-notice.paused span { animation-play-state: paused; }
-@keyframes home-notice-scroll {
-    0% { transform: translateX(0); opacity: 0; }
-    8%, 92% { opacity: 1; }
-    100% { transform: translateX(-100%); opacity: 0; }
-}
 @media (max-width: 760px) {
-    #top.notice-top { flex-wrap: wrap; height: auto; min-height: 56px; gap: 8px 16px; padding-top: 12px; padding-bottom: 8px; }
-    #top.notice-top nav { flex: 1; }
-    .home-notice { order: 1; flex-basis: 100%; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .home-notice-window { mask-image: none; }
-    .home-notice-window span { animation: none; padding-left: 0; white-space: normal; }
-    .home-notice-toggle { display: none; }
+    #top { flex-wrap: wrap; height: auto; min-height: 56px; gap: 8px 12px; padding-top: 12px; padding-bottom: 8px; }
+    #top nav { flex-wrap: wrap; gap: 12px; }
 }
 .home { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 48px; align-items: start; }
 .home-bottom { max-width: 1200px; margin: 0 auto 24px; padding: 0 24px; color: var(--muted); font-size: 13px; }
@@ -202,7 +175,6 @@ aside p:last-child { margin-bottom: 0; }
 .tv button:disabled { cursor: default; color: var(--muted); }
 #tv-frame { width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid var(--line); background: #000; }
 #tv-player p, #tv-status { color: var(--muted); }
-#top.notice-top nav { flex-wrap: wrap; }
 
 @media (max-width: 860px) {
     .home { grid-template-columns: 1fr; gap: 40px; }

@@ -8,7 +8,6 @@ themeButton.addEventListener('click', () => {
     paintTheme();
 });
 paintTheme();
-document.cookie = 'access_granted=tv.html; max-age=2592000; path=/';
 
 const player = document.getElementById('tv-player');
 const frame = document.getElementById('tv-frame');

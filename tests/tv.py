@@ -21,9 +21,11 @@ try:
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(origin + '/home.html')
-            page.get_by_role('link', name='Tv', exact=True).click()
+            assert page.locator('a[href="tv.html"]').count() == 0
+            assert page.locator('.home-notice').count() == 0
+            page.goto(origin + '/tv.html')
             assert page.url == origin + '/tv.html'
-            assert page.locator('nav [aria-current]').inner_text() == 'Tv'
+            assert page.locator('a[href="tv.html"]').count() == 0
             assert page.locator('.tv-action').count() == 0
             assert page.locator('#tv-form').bounding_box()['y'] < page.locator('#tv-help').bounding_box()['y']
             for theme in ('dark', 'light'):
@@ -60,14 +62,15 @@ try:
             page.locator('#tv-form button').click()
             expect(page.locator('#tv-frame')).to_have_attribute('src', 'https://0vidads.top/embed/movie/1339713?branding=larp.surf&loading=2&back=false')
             page.locator('#tv-stop').click()
-            page.locator('.home-notice-toggle').click()
-            assert page.locator('.home-notice-toggle').get_attribute('aria-pressed') == 'true'
+            assert not any(cookie['name'] == 'access_granted' and cookie['value'] == 'tv.html' for cookie in context.cookies())
+            context.add_cookies([{'name': 'access_granted', 'value': 'tv.html', 'url': origin}])
             page.goto(origin)
-            assert page.locator('#content-frame').get_attribute('src') == 'tv.html'
+            assert page.locator('#content-frame').get_attribute('src') == 'about:blank'
+            assert page.locator('#fake-404').is_visible()
             assert not errors, errors
             context.close()
         browser.close()
-    print('Passed: tv navigation, external links, saved themes, mobile layout, notice, saved tab')
+    print('Passed: direct-only Tv access, no navigation links or notice, old saved-tab rejection, external links, themes, mobile layout')
 finally:
     server.shutdown()
     server.server_close()
