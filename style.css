@@ -119,7 +119,7 @@ footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line);
 #debug pre { margin: 0; padding: 8px 12px; overflow: auto; font: 12px/1.4 var(--mono); white-space: pre-wrap; word-break: break-all; }
 
 /* home */
-#top.notice-top nav { flex: 0; }
+#top.notice-top nav { flex: 0 0 auto; }
 .home-notice { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; font-size: 14px; }
 .home-notice-window {
     flex: 1;
@@ -188,6 +188,22 @@ aside p:last-child { margin-bottom: 0; }
 #contact a { font-family: var(--mono); font-size: 13px; word-break: break-all; }
 .tools p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
 .tools span { color: var(--muted); font-size: 13px; }
+
+.tv { max-width: 800px; }
+.tv section { margin-top: 32px; }
+.tv li + li { margin-top: 12px; }
+.tv-action { display: inline-block; padding: 12px 16px; border: 1px solid var(--fg); text-decoration: none; }
+.tv-action:hover { background: var(--hover); }
+.tv-action span { color: var(--muted); }
+.tv form { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
+.tv label { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 100px; }
+.tv input, .tv select { width: 100%; padding: 10px; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); }
+.tv [hidden] { display: none; }
+.tv select:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.tv button { min-height: 44px; }
+#tv-frame { width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid var(--line); background: #000; }
+#tv-player p, #tv-status { color: var(--muted); }
+#top.notice-top nav { flex-wrap: wrap; }
 
 @media (max-width: 860px) {
     .home { grid-template-columns: 1fr; gap: 40px; }
