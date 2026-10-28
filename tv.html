@@ -21,17 +21,19 @@
         <section aria-labelledby="tv-provider">
             <h2 id="tv-provider">Watch</h2>
             <form id="tv-form">
-                <label>Type<select id="tv-type"><option value="movie">Movie</option><option value="tv">TV show</option></select></label>
-                <label>TMDB ID<input id="tmdb-id" type="text" inputmode="numeric" pattern="[1-9][0-9]*" required placeholder="e.g. 1339713"></label>
+                <label class="tv-source-field">Source<select id="tv-source" required></select></label>
+                <label>Type<select id="tv-type"><option value="movie">Movie</option><option value="tv">TV show</option><option value="anime">Anime</option></select></label>
+                <label><span id="tv-id-label">TMDB ID</span><input id="tmdb-id" type="text" inputmode="numeric" pattern="[1-9][0-9]*" required placeholder="e.g. 1339713"></label>
                 <label hidden id="season-field">Season<input id="season" type="number" min="0" max="9999" step="1" required value="1" disabled></label>
                 <label hidden id="episode-field">Episode<input id="episode" type="number" min="1" max="9999" step="1" required value="1" disabled></label>
                 <button type="submit">Load player</button>
             </form>
+            <p><span id="tv-source-note"></span> <a id="tv-source-site" target="_blank" rel="noopener noreferrer">Source website (new tab)</a></p>
             <p id="tv-status" role="status">Enter a TMDB ID to load the player.</p>
             <div id="tv-player" hidden>
                 <p><button id="tv-stop" type="button">Close player</button></p>
-                <iframe id="tv-frame" title="0vidads TV player" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="no-referrer"></iframe>
-                <p>The player is hosted by 0vidads. If it stays blank or playback fails, check the ID, season, and episode, or <a id="tv-external" target="_blank" rel="noopener noreferrer">open the player in a new tab</a>.</p>
+                <iframe id="tv-frame" title="TV player" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                <p>The player is hosted by <span id="tv-host">the selected source</span>. If playback fails, try another source, check the ID and episode, or <a id="tv-external" target="_blank" rel="noopener noreferrer">open the player in a new tab</a>.</p>
             </div>
         </section>
         <section aria-labelledby="tv-help">
@@ -39,11 +41,14 @@
             <ol>
                 <li>Open <a href="https://www.tmdbsearch.com/" target="_blank" rel="noopener noreferrer">TMDB Search (new tab)</a> and search for the movie or show you want.</li>
                 <li>Check the title and release year so you choose the right result.</li>
-                <li>Choose Movie or TV show above and copy the title's numeric TMDB ID into the form. Use the ID, not its name or an IMDb ID.</li>
-                <li>For TV shows, choose a season and episode. Select Load player, then press Play. Playback is provided by 0vidads; availability depends on the provider.</li>
+                <li>Choose a source and Movie or TV show above, then copy the title's numeric TMDB ID into the form. Use the ID, not its name or an IMDb ID.</li>
+                <li>For TV shows, choose a season and episode. Select Load player, then press Play. If a title will not play, choose another source and load it again.</li>
+                <li>Anime-only sources use <a href="https://anilist.co/search/anime" target="_blank" rel="noopener noreferrer">AniList</a> or <a href="https://myanimelist.net/anime.php" target="_blank" rel="noopener noreferrer">MyAnimeList</a> IDs instead. Check the ID label above, find the anime on that site, and enter its numeric ID and episode. These sources start with subtitled audio where an audio option is required.</li>
+                <li>Availability and player controls vary by source. Alternate domains are listed separately. Entries marked “website only” cannot load a player here; use their Source website link.</li>
             </ol>
         </section>
     </main>
+    <script src="tv-sources.js"></script>
     <script src="tv.js"></script>
 </body>
 </html>

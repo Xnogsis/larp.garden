@@ -194,10 +194,12 @@ aside p:last-child { margin-bottom: 0; }
 .tv li + li { margin-top: 12px; }
 .tv form { display: flex; flex-wrap: wrap; gap: 16px; align-items: end; }
 .tv label { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 100px; }
+.tv .tv-source-field { flex-basis: 100%; }
 .tv input, .tv select { width: 100%; padding: 10px; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); }
 .tv [hidden] { display: none; }
 .tv select:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 .tv button { min-height: 44px; }
+.tv button:disabled { cursor: default; color: var(--muted); }
 #tv-frame { width: 100%; height: auto; aspect-ratio: 16 / 9; border: 1px solid var(--line); background: #000; }
 #tv-player p, #tv-status { color: var(--muted); }
 #top.notice-top nav { flex-wrap: wrap; }
