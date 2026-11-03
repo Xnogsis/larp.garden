@@ -6,10 +6,11 @@ const REPO = HUB === "ugs" ? "Xnogsis/ugs-singlefile" : "Xnogsis/html";
 const hubUrl = (file) => "/hub/" + HUB + "/" + file;
 const gamePath = (zone) => zone.url.replace("{HTML_URL}/", "").split("/").map(encodeURIComponent).join("/");
 // Keep site-hosted games outside zones.json, which the daily refresh replaces.
+// These games joined after catalog entry 877; future additions follow them.
 const LOCAL_GAMES = HUB === "gnmath" ? [
-    { id: "antimatter", name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.webp" },
-    { id: "isaac", name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac-face.webp" },
-    { id: "balatro", name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
+    { id: "antimatter", catalogOrder: 877.1, name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.webp" },
+    { id: "isaac", catalogOrder: 877.2, name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac-face.webp" },
+    { id: "balatro", catalogOrder: 877.3, name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
 ] : [];
 const gameUrl = (zone) => zone.localUrl || hubUrl(gamePath(zone));
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
@@ -300,9 +301,8 @@ const swReady = "serviceWorker" in navigator
 const catalog = HUB === "ugs" ? fetchWithTimeout("ugs-games.json") : firstOk("assets", "zones.json");
 Promise.all([catalog.then((r) => { if (!r.ok) throw new Error("catalog HTTP " + r.status); return r.json(); }), swReady])
     .then(([list]) => {
-        const alphabetical = new Intl.Collator("en", { sensitivity: "base", numeric: true, ignorePunctuation: true });
-        zones = [...LOCAL_GAMES, ...list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http"))]
-            .sort((a, b) => alphabetical.compare(a.name, b.name));
+        zones = [...list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http")), ...LOCAL_GAMES];
+        if (HUB === "gnmath") zones.sort((a, b) => (a.catalogOrder ?? a.id) - (b.catalogOrder ?? b.id));
         document.cookie = "access_granted=" + HUB + ".html; max-age=2592000; path=/";
         status.textContent = "";
         render("");
