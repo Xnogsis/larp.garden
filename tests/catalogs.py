@@ -55,6 +55,7 @@ try:
             with page.expect_popup() as opened:
                 page.get_by_role('button', name='Open game in new tab', exact=True).click()
             popup = opened.value
+            popup.wait_for_url('**/hub/ugs/UGS-Files/**')
             popup.wait_for_load_state('domcontentloaded')
             assert urlsplit(popup.url).path.startswith('/hub/ugs/UGS-Files/')
             assert popup.evaluate('window.opener === null')

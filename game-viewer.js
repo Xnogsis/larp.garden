@@ -28,6 +28,7 @@ window.GameViewer = class GameViewer {
             this.viewer.classList.remove('nobar'); document.getElementById('close').focus();
         });
         document.getElementById('retry-game').addEventListener('click', () => this.load(true));
+        document.getElementById('advanced-retry').addEventListener('click', () => { this.options.open = false; this.load(true); });
         document.getElementById('alternate-source').addEventListener('click', () => {
             this.source = this.source === 'jsdelivr' ? '' : 'jsdelivr'; this.load(true);
         });

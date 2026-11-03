@@ -71,7 +71,7 @@ try:
     with sync_playwright() as p:
         browser = p.firefox.launch(timeout=30000) if '--firefox' in sys.argv else p.chromium.launch(
             executable_path=shutil.which('chromium'), args=['--enable-unsafe-swiftshader'])
-        page = browser.new_page()
+        page = browser.new_page(locale="en-US")
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(f'http://127.0.0.1:{server.server_port}')
@@ -83,7 +83,7 @@ try:
             frame = page.frames[1]
             frame.wait_for_function('''() => {
                 const player = document.querySelector('ruffle-embed, ruffle-object, ruffle-player');
-                return player?.ruffle().metadata?.width > 0;
+                return typeof player?.ruffle === 'function' && player.ruffle().metadata?.width > 0;
             }''', timeout=60000)
             frame.locator('canvas').first.wait_for(state='visible')
             assert not errors, errors

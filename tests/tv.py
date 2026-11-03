@@ -38,6 +38,7 @@ try:
                 with page.expect_popup() as opened:
                     link.click()
                 popup = opened.value
+                popup.wait_for_url(link.get_attribute('href'))
                 popup.wait_for_load_state()
                 assert popup.url == link.get_attribute('href')
                 assert popup.evaluate('window.opener === null')
