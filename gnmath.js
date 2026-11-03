@@ -8,7 +8,7 @@ const gamePath = (zone) => zone.url.replace("{HTML_URL}/", "").split("/").map(en
 // Keep site-hosted games outside zones.json, which the daily refresh replaces.
 const LOCAL_GAMES = HUB === "gnmath" ? [
     { id: "antimatter", name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.webp" },
-    { id: "isaac", name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac.webp" },
+    { id: "isaac", name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac-face.webp" },
     { id: "balatro", name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
 ] : [];
 const gameUrl = (zone) => zone.localUrl || hubUrl(gamePath(zone));
@@ -300,7 +300,9 @@ const swReady = "serviceWorker" in navigator
 const catalog = HUB === "ugs" ? fetchWithTimeout("ugs-games.json") : firstOk("assets", "zones.json");
 Promise.all([catalog.then((r) => { if (!r.ok) throw new Error("catalog HTTP " + r.status); return r.json(); }), swReady])
     .then(([list]) => {
-        zones = [...LOCAL_GAMES, ...list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http"))];
+        const alphabetical = new Intl.Collator("en", { sensitivity: "base", numeric: true, ignorePunctuation: true });
+        zones = [...LOCAL_GAMES, ...list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http"))]
+            .sort((a, b) => alphabetical.compare(a.name, b.name));
         document.cookie = "access_granted=" + HUB + ".html; max-age=2592000; path=/";
         status.textContent = "";
         render("");
