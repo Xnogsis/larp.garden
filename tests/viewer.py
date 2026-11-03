@@ -42,6 +42,14 @@ try:
         assert page.locator('main').evaluate('el => el.inert')
         assert page.locator('#viewer').get_attribute('aria-modal') == 'true'
         expect(page.locator('#game-status')).to_contain_text('Game page loaded')
+        # Empty script URLs must not request the HTML document as JavaScript.
+        assert page.frame_locator('#frame').locator('script[src=""], script[src="  "]').count() == 0
+        head = page.evaluate('''async () => {
+            const response = await fetch(document.getElementById('frame').src, {method:'HEAD'});
+            return {status:response.status, type:response.headers.get('content-type'), body:await response.text()};
+        }''')
+        assert head == {'status': 200, 'type': 'text/html', 'body': ''}, head
+        assert any(query.get('method') == ['HEAD'] for _, query in CatalogHandler.attempts)
         # Desktop primary actions remain directly reachable; technical choices are disclosed.
         for selector in ['#close', '#fullscreen', '#viewer-options summary']:
             box = page.locator(selector).bounding_box()
@@ -92,6 +100,7 @@ try:
         CatalogHandler.fail_games = True
         page.goto(base + '/gnmath.html?id=1')
         expect(page.locator('#game-status')).to_contain_text('source returned an error', timeout=20000)
+        assert page.evaluate("async () => (await fetch(document.getElementById('frame').src, {method:'HEAD'})).status") == 502
         CatalogHandler.fail_games = False
         CatalogHandler.attempts.clear()
         page.locator('#alternate-source').click()

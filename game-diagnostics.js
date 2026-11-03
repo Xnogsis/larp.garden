@@ -35,7 +35,7 @@ window.lgDebug = (win) => {
                 );
             }
         }
-        else log("error", e.message + (e.filename ? " @ " + e.filename + ":" + e.lineno : ""));
+        else log("error", e.error?.stack || e.message + (e.filename ? " @ " + e.filename + ":" + e.lineno : ""));
     }, true);
     win.addEventListener("unhandledrejection", (e) => log("rejection", describe(e.reason)));
     for (const level of ["error", "warn"]) {

@@ -28,6 +28,11 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    // Let Moto X3M 3's pinned, CORS-enabled scripts report useful error details.
+    ["58d9d25357dc8597da2691dc003f35c4ca25ac65/moto3.js", (body) => body.replaceAll(
+        '<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/bubbls/ruffle@58d9d25357dc8597da2691dc003f35c4ca25ac65/',
+        '<script crossorigin="anonymous" type="text/javascript" src="https://cdn.jsdelivr.net/gh/bubbls/ruffle@58d9d25357dc8597da2691dc003f35c4ca25ac65/'
+    )],
     ["bubbls/UGS-Assets@main/BurritoBison-main/", (body) => body.replaceAll(
         "bubbls/UGS-Assets@main/BurritoBison-main/",
         "bubbls/UGS-Assets@" + BURRITO_COMMIT + "/BurritoBison-main/"
@@ -236,7 +241,10 @@ async function firstOk(repos, path, tried, options = {}) {
         const sources = options.source === "jsdelivr" ? [...SOURCES].reverse() : SOURCES;
         for (const build of sources) {
             const url = build(repo, ref, path);
-            const res = await fetchWithTimeout(url, { cache: options.retry ? "reload" : "force-cache" }).catch((e) => e);
+            const res = await fetchWithTimeout(url, {
+                method: options.head ? "HEAD" : "GET",
+                cache: options.head ? "no-store" : options.retry ? "reload" : "force-cache",
+            }).catch((e) => e);
             tried.push([res.status || res.name, url]);
             if (res.ok) return res;
         }
@@ -278,20 +286,25 @@ async function fromMirrors(path, hub = "gnmath", options = {}) {
     if (!res && renamed && missing()) res = await firstOk(repos, renamed[1] + ".html", tried, options);
     if (!res) {
         // Listed so a user without devtools can paste which source answered what (AbortError = cut off or timed out).
-        return new Response("Not found: " + path + "\n\n" + tried.map((t) => t.join(" ")).join("\n"),
+        return new Response(options.head ? null : "Not found: " + path + "\n\n" + tried.map((t) => t.join(" ")).join("\n"),
             { status: missing() ? 404 : 502, headers: { "Content-Type": "text/plain" } });
     }
     const headers = new Headers();
     const mime = mimeFor(path) || res.headers.get("content-type") || "application/octet-stream";
     headers.set("Content-Type", mime);
     headers.set("Cache-Control", "public, max-age=86400");
-    let body = res.body;
     if (mime === "text/html") {
         headers.set("Content-Security-Policy", HUB_CSP);
         headers.set("X-Content-Type-Options", "nosniff");
+    }
+    if (options.head) return new Response(null, { status: 200, headers });
+    let body = res.body;
+    if (mime === "text/html") {
         // Hub pages must keep sending a full referrer, or their root-relative
         // links can't be routed back to the hub.
         body = (await res.text()).replace(/<meta\s+name=["']?referrer["']?[^>]*>/gi, "");
+        // An empty src resolves to the document URL, loading HTML as JavaScript.
+        body = body.replace(/<script\b(?=[^>]*\ssrc\s*=\s*(["'])\s*\1)[^>]*>\s*<\/script\s*>/gi, "");
         for (const [marker, fix] of HTML_FIXES) if (body.includes(marker)) body = fix(body);
         const prelude = hub === "ugs"
             ? '<script>try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>'
@@ -306,6 +319,11 @@ async function fromMirrors(path, hub = "gnmath", options = {}) {
 
 self.addEventListener("fetch", (event) => {
     const url = new URL(event.request.url);
+    if (event.request.method === "HEAD" && url.origin === self.location.origin) {
+        const direct = hubPath(url.pathname);
+        if (direct) event.respondWith(fromMirrors(direct.path, direct.hub, { head: true }));
+        return;
+    }
     if (event.request.method !== "GET") return;
 
     // Game scripts request jsDelivr files themselves; those go through esm.sh too.

@@ -9,7 +9,7 @@ const fixtureFetch = self.fetch.bind(self);
 self.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input.url;
     const game = /\/gh\/Xnogsis\/(?:html|ugs-singlefile|html55-new)@([a-f0-9]{40})\/(.+?)(?:\?raw)?$/.exec(url);
-    if (game) return fixtureFetch('/fixture/' + encodeURIComponent(game[2]) + '?ref=' + game[1] + '&mirror=' + (url.includes('esm.sh') ? 'esm' : 'jsdelivr'));
+    if (game) return fixtureFetch('/fixture/' + encodeURIComponent(game[2]) + '?ref=' + game[1] + '&mirror=' + (url.includes('esm.sh') ? 'esm' : 'jsdelivr') + '&method=' + (init?.method || 'GET'));
     return fixtureFetch(input, init);
 };
 '''
@@ -41,7 +41,7 @@ self.addEventListener('install', event => event.waitUntil(new Promise(resolve =>
         elif parsed.path.startswith('/fixture/'):
             query = parse_qs(parsed.query)
             type(self).attempts.append((unquote(parsed.path), query))
-            body = b'Unavailable' if type(self).fail_games else b'<!doctype html><title>Fixture game</title><button id="game-control">Play</button><canvas width="10" height="10"></canvas>'
+            body = b'Unavailable' if type(self).fail_games else b'<!doctype html><title>Fixture game</title><button id="game-control">Play</button><canvas width="10" height="10"></canvas><script src=""></script><script async src="  "></script>'
             if not type(self).fail_games and Path(unquote(parsed.path)).name.split('.')[0].split('-')[0] == '3':
                 body = b'<!doctype html><title>Broken game</title><script>throw new Error("fixture startup failed")</script>'
             mime, code = 'text/html', 503 if type(self).fail_games else 200
