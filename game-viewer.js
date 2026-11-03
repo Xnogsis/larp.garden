@@ -81,7 +81,7 @@ window.GameViewer = class GameViewer {
         this.options.open = false;
         this.background.forEach(el => { el.inert = true; });
         document.body.classList.add('playing');
-        document.title = zone.name;
+        document.title = "Clever";
         this.onOpen(zone);
         this.load();
         document.getElementById('close').focus();
@@ -100,7 +100,7 @@ window.GameViewer = class GameViewer {
         this.clearTimers(); this.active = null;
         this.viewer.classList.remove('open', 'nobar'); this.options.open = false;
         this.background.forEach(el => { el.inert = false; });
-        document.body.classList.remove('playing'); document.title = this.title;
+        document.body.classList.remove('playing'); document.title = "Clever";
         const old = document.getElementById('frame');
         const blank = old.cloneNode(false); blank.src = 'about:blank'; old.replaceWith(blank);
         if (this.returnFocus?.isConnected && this.returnFocus !== document.body) this.returnFocus.focus();
@@ -179,7 +179,7 @@ window.GameViewer = class GameViewer {
         const w = window.open('about:blank');
         if (!w) { this.status('The browser blocked the new window. Allow popups or use the current viewer.'); return; }
         w.opener = null;
-        const d = w.document; d.title = this.active.name;
+        const d = w.document; d.title = "Clever";
         const style = d.createElement('style'); style.textContent = 'body{margin:0}iframe{border:0;width:100vw;height:100vh}';
         const iframe = d.createElement('iframe'); iframe.title = this.active.name;
         iframe.allow = 'fullscreen; autoplay; gamepad'; iframe.src = new URL(this.gameUrl(this.active), location.href).href;

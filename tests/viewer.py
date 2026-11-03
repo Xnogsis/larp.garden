@@ -17,6 +17,7 @@ try:
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(base + '/')
+        expect(page).to_have_title('Clever')
         page.keyboard.press('Tab')
         assert page.url == base + '/'
         assert page.locator('#fake-404').is_visible()
@@ -37,6 +38,7 @@ try:
         card.click()
         page.wait_for_url(base + '/gnmath.html?id=0')
         expect(page.locator('#close')).to_be_focused()
+        expect(page).to_have_title('Clever')
         assert page.locator('main').evaluate('el => el.inert')
         assert page.locator('#viewer').get_attribute('aria-modal') == 'true'
         expect(page.locator('#game-status')).to_contain_text('Game page loaded')
@@ -47,6 +49,7 @@ try:
         assert not page.locator('#blank').is_visible()
         page.go_back()
         expect(page.locator('#viewer')).not_to_be_visible()
+        expect(page).to_have_title('Clever')
         expect(card).to_be_focused()
         assert not page.locator('main').evaluate('el => el.inert')
         page.go_forward()
