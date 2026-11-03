@@ -70,6 +70,18 @@ try:
         page.locator('#clear-search').click()
         expect(page.locator('#empty-state')).not_to_be_visible()
         expect(page.get_by_role('searchbox')).to_be_focused()
+        # A fast search-and-click can replace the opening card during playback.
+        page.evaluate('''() => {
+            const search = document.getElementById('search');
+            search.value = 'Bowmasters';
+            search.dispatchEvent(new Event('input'));
+            const card = document.querySelector('#grid .zone');
+            card.focus(); card.click();
+        }''')
+        page.wait_for_function("document.querySelectorAll('#grid .zone').length === 1")
+        page.keyboard.press('Escape')
+        expect(page.locator('#grid .zone').first).to_be_focused()
+        page.wait_for_url(base + '/gnmath.html')
         # Unknown deep links explain the problem instead of silently displaying nothing.
         page.goto(base + '/gnmath.html?id=not-a-game')
         expect(page.locator('#status')).to_contain_text('no longer in this catalog')

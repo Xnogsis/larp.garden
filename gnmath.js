@@ -72,6 +72,7 @@ function render(filter) {
         const li = document.createElement("li");
         const btn = document.createElement("button");
         btn.className = "zone";
+        btn.dataset.gameId = String(z.id);
         btn.type = "button";
         const img = document.createElement("img");
         img.loading = "lazy";

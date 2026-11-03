@@ -66,7 +66,7 @@ window.GameViewer = class GameViewer {
         else this.hide();
     }
     open(zone, push = true) {
-        if (!this.active) this.returnFocus = document.activeElement;
+        if (!this.active) { this.returnFocus = document.activeElement; this.returnGameId = String(zone.id); }
         this.active = zone; this.source = '';
         if (push) {
             const url = new URL(location.href); url.searchParams.set('id', zone.id);
@@ -104,7 +104,10 @@ window.GameViewer = class GameViewer {
         const old = document.getElementById('frame');
         const blank = old.cloneNode(false); blank.src = 'about:blank'; old.replaceWith(blank);
         if (this.returnFocus?.isConnected && this.returnFocus !== document.body) this.returnFocus.focus();
-        else document.getElementById('search').focus();
+        else {
+            const card = [...document.querySelectorAll('#grid .zone')].find(el => el.dataset.gameId === this.returnGameId);
+            (card || document.getElementById('search')).focus();
+        }
     }
     status(message) { this.message.textContent = message; this.feedback.hidden = false; }
     load(retry = false) {
