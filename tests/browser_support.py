@@ -18,6 +18,7 @@ self.fetch = (input, init) => {
 class CatalogHandler(SimpleHTTPRequestHandler):
     fail_games = False
     attempts = []
+    worker_revision = 1
 
     def log_message(self, *_):
         pass
@@ -31,7 +32,11 @@ class CatalogHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed = urlsplit(self.path)
         if parsed.path == '/sw.js':
-            body = (ADAPTER + (ROOT / 'sw.js').read_text()).encode()
+            revision = type(self).worker_revision
+            probe = f'''\nself.addEventListener('message', event => {{ if (event.data === 'fixture-revision') event.source.postMessage({{revision: {revision}}}); }});
+self.addEventListener('install', event => event.waitUntil(new Promise(resolve => setTimeout(resolve, 250))));
+'''
+            body = (ADAPTER + (ROOT / 'sw.js').read_text() + probe).encode()
             mime, code = 'text/javascript', 200
         elif parsed.path.startswith('/fixture/'):
             query = parse_qs(parsed.query)

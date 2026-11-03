@@ -132,7 +132,23 @@ search.addEventListener("input", () => {
 
 const swReady = "serviceWorker" in navigator
     ? Promise.race([
-        navigator.serviceWorker.register("sw.js", {scope: "/", updateViaCache: "none"}).then(async () => {
+        navigator.serviceWorker.register("sw.js", {scope: "/", updateViaCache: "none"}).then(async reg => {
+            // Returning visitors must wait for the new loader to claim this page.
+            if (navigator.serviceWorker.controller) await reg.update();
+            const next = reg.installing || reg.waiting || (reg.active !== navigator.serviceWorker.controller ? reg.active : null);
+            if (next) await new Promise((resolve, reject) => {
+                const cleanup = () => {
+                    navigator.serviceWorker.removeEventListener("controllerchange", changed);
+                    next.removeEventListener("statechange", changed);
+                };
+                const changed = () => {
+                    if (next.state === "redundant") { cleanup(); reject(new Error("The game loader update failed. Reload or reset the loader on Home.")); }
+                    else if (navigator.serviceWorker.controller === next && next.state === "activated") { cleanup(); resolve(); }
+                };
+                navigator.serviceWorker.addEventListener("controllerchange", changed);
+                next.addEventListener("statechange", changed);
+                changed();
+            });
             await navigator.serviceWorker.ready;
             if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener("controllerchange", resolve, {once: true}));
         }),

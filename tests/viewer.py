@@ -23,6 +23,15 @@ try:
         page.keyboard.press('Enter')
         page.wait_for_url(base + '/gnmath.html')
         page.locator('#grid .zone').first.wait_for()
+        # A new worker must control the catalog before a returning visitor plays.
+        CatalogHandler.worker_revision = 2
+        page.reload(wait_until='domcontentloaded')
+        page.locator('#grid .zone').first.wait_for()
+        revision = page.evaluate('''() => new Promise(resolve => {
+            navigator.serviceWorker.addEventListener('message', event => { if (event.data.revision) resolve(event.data.revision); }, {once:true});
+            navigator.serviceWorker.controller.postMessage('fixture-revision');
+        })''')
+        assert revision == 2
         card = page.locator('#grid .zone').first
         name = card.inner_text()
         card.click()
@@ -101,7 +110,7 @@ try:
         expect(broken.locator('#catalog-retry')).to_be_visible(timeout=20000)
         assert not errors, errors
         browser.close()
-    print('Passed: desktop entry, canonical URLs, Back/Forward, shared links, focus/Escape, empty states, source retry, pinned refs, Home discovery and catalog failure')
+    print('Passed: desktop entry, service-worker upgrades, canonical URLs, Back/Forward, shared links, focus/Escape, empty states, source retry, pinned refs, Home discovery and catalog failure')
 finally:
     server.shutdown()
     server.server_close()
