@@ -7,9 +7,9 @@ const hubUrl = (file) => "/hub/" + HUB + "/" + file;
 const gamePath = (zone) => zone.url.replace("{HTML_URL}/", "").split("/").map(encodeURIComponent).join("/");
 // Keep site-hosted games outside zones.json, which the daily refresh replaces.
 const LOCAL_GAMES = HUB === "gnmath" ? [
-    { id: "antimatter", name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.svg" },
-    { id: "isaac", name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac.svg" },
-    { id: "balatro", name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.svg" },
+    { id: "antimatter", name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.webp" },
+    { id: "isaac", name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac.webp" },
+    { id: "balatro", name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
 ] : [];
 const gameUrl = (zone) => zone.localUrl || hubUrl(gamePath(zone));
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
