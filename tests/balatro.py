@@ -37,34 +37,42 @@ try:
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.on('requestfailed', lambda request: failures.append(request.url))
         page.on('request', lambda request: requests.append(request.url))
-        single_games = page.locator('section').filter(has=page.get_by_role('heading', name='Single games'))
-        single_games.get_by_role('link', name='Balatro').click()
-        assert page.url == origin + '/balatro/index.html'
-        assert 'access_granted=balatro/index.html' in page.evaluate('document.cookie')
+        page.get_by_role('link', name='Games', exact=True).click()
+        page.get_by_role('searchbox').fill('Balatro')
+        page.locator('#grid .zone').filter(has_text='Balatro').click()
+        assert page.url == origin + '/gnmath.html?id=balatro'
+        assert 'access_granted=gnmath.html' in page.evaluate('document.cookie')
+        game = page.frame_locator('#frame')
         ready = '''window.Module?.calledRun && window.FS &&
             getComputedStyle(document.getElementById('loadingCanvas')).display === 'none' '''
-        page.wait_for_function(ready, timeout=90000)
-        page.locator('#canvas').click(position={'x': 640, 'y': 360})
+        game.locator('#canvas').wait_for()
+        game_frame = next(f for f in page.frames if '/balatro/index.html' in f.url)
+        game_frame.wait_for_function(ready, timeout=90000)
+        game.locator('#canvas').click(position={'x': 640, 'y': 360})
         page.wait_for_timeout(4000)
         page.screenshot(path='/tmp/balatro-home.png')
-        assert page.locator('#canvas').evaluate('(c) => c.width === 1280 && c.height === 720')
+        assert game.locator('#canvas').evaluate('(c) => c.width === innerWidth && c.height === innerHeight')
         assert any('/balatro/love.wasm' in url for url in requests)
         assert any('/balatro/game.data' in url for url in requests)
         assert all(url.startswith(origin + '/') for url in requests), requests
         assert not errors and not failures, (errors, failures)
-        page.evaluate('''async () => {
+        game_frame.evaluate('''async () => {
             FS.writeFile('/home/web_user/love/larp-save-check', 'persisted');
             await new Promise((resolve, reject) => FS.syncfs(false, error => error ? reject(error) : resolve()));
         }''')
         page.goto(origin + '/index.html')
-        # The root page restores the saved game inside its normal iframe.
-        page.wait_for_function("document.getElementById('content-frame').contentWindow.location.pathname === '/balatro/index.html'")
+        # The root page restores Games; reopening Balatro keeps its saved data.
+        page.wait_for_function("document.getElementById('content-frame').contentWindow.location.pathname === '/gnmath.html'")
+        hub = next(f for f in page.frames if '/gnmath.html' in f.url)
+        hub.get_by_role('searchbox').fill('Balatro')
+        hub.locator('#grid .zone').filter(has_text='Balatro').click()
+        hub.frame_locator('#frame').locator('#canvas').wait_for()
         game = next(f for f in page.frames if '/balatro/index.html' in f.url)
         game.wait_for_function(ready, timeout=90000)
         assert game.evaluate("FS.readFile('/home/web_user/love/larp-save-check', {encoding:'utf8'})") == 'persisted'
         assert not errors and not failures, (errors, failures)
         browser.close()
-    print('Passed: Balatro Home link, active-worker loading, WASM/game data, no external requests, saved-page restore, persistent filesystem')
+    print('Passed: Balatro catalog card, active-worker loading, WASM/game data, no external requests, saved-page restore, persistent filesystem')
 finally:
     server.shutdown()
     server.server_close()

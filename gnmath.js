@@ -5,6 +5,13 @@ const TITLE = document.currentScript.dataset.title || "gn-math";
 const REPO = HUB === "ugs" ? "Xnogsis/ugs-singlefile" : "Xnogsis/html";
 const hubUrl = (file) => "/hub/" + HUB + "/" + file;
 const gamePath = (zone) => zone.url.replace("{HTML_URL}/", "").split("/").map(encodeURIComponent).join("/");
+// Keep site-hosted games outside zones.json, which the daily refresh replaces.
+const LOCAL_GAMES = HUB === "gnmath" ? [
+    { id: "antimatter", name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.svg" },
+    { id: "isaac", name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac.svg" },
+    { id: "balatro", name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.svg" },
+] : [];
+const gameUrl = (zone) => zone.localUrl || hubUrl(gamePath(zone));
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
 // esm.sh rewrites .js files into ES modules unless asked for the raw file.
 const at = (src, repo, path) => src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
@@ -41,6 +48,7 @@ async function firstOk(repo, path) {
 
 // t/ holds ~9 KB thumbnails of the covers (avg ~400 KB), made by .github/scripts/catalog.py.
 function coverFor(zone) {
+    if (zone.localUrl) return [zone.cover];
     const file = (zone.cover || "").replace("{COVER_URL}/", "");
     return ["t/" + file.replace(/\.[^.]+$/, ".webp"), ...SOURCES.map((s) => at(s, "covers", file))];
 }
@@ -49,7 +57,7 @@ function coverFor(zone) {
 // so the click reuses the response.
 const warmed = new Set();
 function warm(zone) {
-    if (warmed.has(zone.id) || zone.url.startsWith("http")) return;
+    if (zone.localUrl || warmed.has(zone.id) || zone.url.startsWith("http")) return;
     warmed.add(zone.id);
     fetch(hubUrl(gamePath(zone))).catch(() => {});
 }
@@ -100,15 +108,18 @@ document.getElementById("viewer-author").after(esmNote);
 
 let gameFile = "";
 function openZone(zone) {
-    if (zone.url.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
+    if (zone.url?.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
     document.getElementById("viewer-title").textContent = zone.name;
     document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
     const [esmId, esmLabel] = ESM_NOTES[zone.id] || [];
     esmNote.hidden = !esmId;
     esmNote.dataset.id = esmId;
     esmButton.textContent = esmLabel;
-    gameFile = gamePath(zone);
-    const url = hubUrl(gameFile);
+    gameFile = zone.localUrl ? "" : gamePath(zone);
+    const url = gameUrl(zone);
+    // The jsDelivr launcher only supports games from the remote catalog.
+    const jsdTab = document.getElementById("jsdtab");
+    if (jsdTab) jsdTab.hidden = !!zone.localUrl;
     note("open", zone.id + " " + url);
     frame.src = url;
     frame.title = zone.name;
@@ -289,7 +300,7 @@ const swReady = "serviceWorker" in navigator
 const catalog = HUB === "ugs" ? fetchWithTimeout("ugs-games.json") : firstOk("assets", "zones.json");
 Promise.all([catalog.then((r) => { if (!r.ok) throw new Error("catalog HTTP " + r.status); return r.json(); }), swReady])
     .then(([list]) => {
-        zones = list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http"));
+        zones = [...LOCAL_GAMES, ...list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http"))];
         document.cookie = "access_granted=" + HUB + ".html; max-age=2592000; path=/";
         status.textContent = "";
         render("");

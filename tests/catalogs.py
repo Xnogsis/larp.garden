@@ -76,9 +76,33 @@ try:
             page.wait_for_function("document.querySelectorAll('#grid .zone').length > 0")
             assert page.locator('html').evaluate("el => el.classList.contains('dark')")
             assert page.locator('#jsdtab').count() == 1
+            # Local games share the catalog cards, search, viewer and deep links.
+            for game_id, name, path in [
+                ('antimatter', 'Antimatter Dimensions', 'antimatter.html'),
+                ('isaac', 'The Binding of Isaac: Repentance+', 'isaac.html'),
+                ('balatro', 'Balatro', 'balatro/index.html'),
+            ]:
+                page.route(base + '/' + path, lambda route: route.fulfill(
+                    content_type='text/html', body='<title>Local game</title>'))
+                page.get_by_role('searchbox').fill(name)
+                card = page.locator('#grid .zone').filter(has_text=name)
+                card.wait_for()
+                page.wait_for_function("document.querySelectorAll('#grid .zone').length === 1")
+                card.locator('img').evaluate('(img) => img.decode()')
+                assert card.locator('img').evaluate('(img) => img.naturalWidth > 0')
+                card.click()
+                assert page.locator('#frame').get_attribute('src') == path
+                assert not page.locator('#jsdtab').is_visible()
+                page.reload(wait_until='domcontentloaded')
+                page.wait_for_function("document.querySelector('#viewer').classList.contains('open')")
+                assert page.locator('#frame').get_attribute('src') == path
+                assert parse_qs(urlsplit(page.url).query)['id'][0] == game_id
+                page.locator('#close').click()
             page.get_by_role('searchbox').fill('Retro Bowl')
             page.wait_for_function("document.querySelectorAll('#grid .zone').length < 10")
             assert page.locator('#grid .zone').count() > 0
+            page.locator('#grid .zone').filter(has_text='Retro Bowl').first.click()
+            assert page.locator('#jsdtab').is_visible()
             assert not errors, errors
             page.close()
         browser.close()
