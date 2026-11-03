@@ -19,7 +19,7 @@ adapter = '''
 const actualFetch = fetch;
 self.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input.url;
-    const page = /\\/gh\\/Xnogsis\\/html@main\\/(10[346]-fix2?\\.html)/.exec(url);
+    const page = /\\/gh\\/Xnogsis\\/html@(?:main|[a-f0-9]{40})\\/(10[346]-fix2?\\.html)/.exec(url);
     if (page) return actualFetch('/fixture/' + page[1]);
     if (/^https?:/.test(url) && new URL(url).origin !== self.location.origin)
         throw new Error('Unexpected external network request: ' + url);

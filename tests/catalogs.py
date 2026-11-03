@@ -8,10 +8,11 @@ from threading import Thread
 from urllib.parse import parse_qs, urlsplit
 from urllib.parse import quote
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
+from browser_support import CatalogHandler
 
 
-class QuietHandler(SimpleHTTPRequestHandler):
+class QuietHandler(CatalogHandler):
     def log_message(self, *_):
         pass
 
@@ -50,8 +51,9 @@ try:
             assert page.locator('#viewer').evaluate("el => el.classList.contains('open')")
             assert '/hub/ugs/UGS-Files/' in page.locator('#frame').get_attribute('src')
             assert page.get_by_role('button', name='jsDelivr tab', exact=True).count() == 0
+            page.locator('#viewer-options summary').click()
             with page.expect_popup() as opened:
-                page.get_by_role('button', name='open game in new tab', exact=True).click()
+                page.get_by_role('button', name='Open game in new tab', exact=True).click()
             popup = opened.value
             popup.wait_for_load_state('domcontentloaded')
             assert urlsplit(popup.url).path.startswith('/hub/ugs/UGS-Files/')
@@ -63,6 +65,7 @@ try:
             assert parse_qs(urlsplit(page.url).query)['id'][0] == game_id
             page.locator('#close').click()
             assert not page.locator('#viewer').is_visible()
+            page.wait_for_url(base + '/ugs.html')
             assert not urlsplit(page.url).query
             spaced_id = next(game['id'] for game in games if ' ' in game['id'])
             page.goto(base + '/ugs.html?id=' + quote(spaced_id), wait_until='domcontentloaded')
@@ -71,7 +74,8 @@ try:
             assert ' ' not in page.locator('#frame').get_attribute('src')
             assert any(c['name'] == 'access_granted' and c['value'] == 'ugs.html' for c in page.context.cookies())
             page.goto(base, wait_until='domcontentloaded')
-            assert page.locator('#content-frame').get_attribute('src') == 'ugs.html'
+            page.wait_for_url(base + '/ugs.html')
+            assert page.url == base + '/ugs.html'
             page.goto(base + '/gnmath.html', wait_until='domcontentloaded')
             page.wait_for_function("document.querySelectorAll('#grid .zone').length > 0")
             assert page.locator('html').evaluate("el => el.classList.contains('dark')")
@@ -102,6 +106,7 @@ try:
             page.wait_for_function("document.querySelectorAll('#grid .zone').length < 10")
             assert page.locator('#grid .zone').count() > 0
             page.locator('#grid .zone').filter(has_text='Retro Bowl').first.click()
+            page.locator('#viewer-options summary').click()
             assert page.locator('#jsdtab').is_visible()
             assert not errors, errors
             page.close()

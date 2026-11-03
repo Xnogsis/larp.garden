@@ -10,7 +10,7 @@
 <body>
     <header id="top">
         <a class="brand" href="home.html">larp.surf</a>
-        <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a></nav>
+        <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a><a href="tv.html">Tv</a></nav>
         <button type="button" id="theme">Light</button>
     </header>
 
@@ -24,8 +24,21 @@
 
             <section>
                 <ul class="page-list">
-                    <li><a class="page-link" href="gnmath.html"><b>gn-math</b><small>800+ browser games, including Antimatter Dimensions, Isaac, and Balatro.</small><span class="arrow">&rarr;</span></a></li>
+                    <li><a class="page-link" href="gnmath.html"><b>Games</b><small>The main collection: illustrated cards, browser games, and our locally hosted games.</small><span class="arrow">&rarr;</span></a></li>
+                    <li><a class="page-link" href="ugs.html"><b>UGS</b><small>A larger collection of single-file games, listed by title.</small><span class="arrow">&rarr;</span></a></li>
                 </ul>
+            </section>
+
+            <section aria-labelledby="recent-title">
+                <h2 id="recent-title">Recently played</h2>
+                <p id="recent-empty" class="muted">Games you open will appear here on this browser.</p>
+                <ul id="recent-games" class="discovery-grid"></ul>
+                <button type="button" id="clear-recent" hidden>Clear play history</button>
+            </section>
+
+            <section aria-labelledby="featured-title">
+                <h2 id="featured-title">Start playing</h2>
+                <ul id="featured-games" class="discovery-grid"></ul>
             </section>
 
             <section class="experiments-section">
@@ -40,6 +53,9 @@
                 <article>
                     <time datetime="2026-11-02">November 2, 2026</time>
                     <ul>
+                        <li>Added game links that work with browser Back and Forward, keyboard focus handling, and loading recovery controls.</li>
+                        <li>Added recent games and featured picks to Home, explained the two catalogs, linked Tv, and collapsed older updates.</li>
+                        <li>Moved alternate launch options into More, added helpful search states, and pinned catalog sources to exact versions.</li>
                         <li>Added a Home notice that single games have moved to the Games tab.</li>
                         <li>Restored the original game catalog order, with the three standalone games placed as recent additions instead of pinned at the front.</li>
                         <li>Sorted Games and UGS alphabetically, including the standalone games, and changed Isaac's icon to a simple cartoon face.</li>
@@ -47,6 +63,8 @@
                         <li>Moved Antimatter Dimensions, Isaac, and Balatro into Games with icons, search, and the shared game viewer.</li>
                     </ul>
                 </article>
+                <details class="older-updates">
+                    <summary>Older updates</summary>
                 <article>
                     <time datetime="2026-10-27">October 27, 2026</time>
                     <ul>
@@ -114,6 +132,7 @@
                         <li>Switched game loading, covers, and catalog refreshes to Xnogsis forks and synchronized their contents.</li>
                     </ul>
                 </article>
+                </details>
             </section>
 
             <footer>
@@ -145,6 +164,8 @@
 
     <p class="home-bottom">yes i do</p>
 
+    <script src="game-library.js"></script>
+    <script src="home-discovery.js"></script>
     <script>
         const COOKIE_MAX_AGE = 60 * 60 * 24 * 30;
 

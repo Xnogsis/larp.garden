@@ -2,27 +2,27 @@
 // The script's data attributes select the hub and catalog/cover hosts.
 const HUB = document.currentScript.dataset.hub || "gnmath";
 const TITLE = document.currentScript.dataset.title || "gn-math";
-const REPO = HUB === "ugs" ? "Xnogsis/ugs-singlefile" : "Xnogsis/html";
 const hubUrl = (file) => "/hub/" + HUB + "/" + file;
 const gamePath = (zone) => zone.url.replace("{HTML_URL}/", "").split("/").map(encodeURIComponent).join("/");
-// Keep site-hosted games outside zones.json, which the daily refresh replaces.
-// These games joined after catalog entry 877; future additions follow them.
-const LOCAL_GAMES = HUB === "gnmath" ? [
-    { id: "antimatter", catalogOrder: 877.1, name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.webp" },
-    { id: "isaac", catalogOrder: 877.2, name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac-face.webp" },
-    { id: "balatro", catalogOrder: 877.3, name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
-] : [];
 const gameUrl = (zone) => zone.localUrl || hubUrl(gamePath(zone));
 const SOURCES = document.currentScript.dataset.sources.trim().split(/\s+/);
 // esm.sh rewrites .js files into ES modules unless asked for the raw file.
-const at = (src, repo, path) => src + repo + "@main/" + path + (src.includes("esm.sh") ? "?raw" : "");
+const at = (src, repo, path) => src + repo + "@" + GAME_SOURCE_PINS["Xnogsis/" + repo] + "/" + path + (src.includes("esm.sh") ? "?raw" : "");
 
 const grid = document.getElementById("grid");
 const status = document.getElementById("status");
 const search = document.getElementById("search");
 const count = document.getElementById("count");
-const viewer = document.getElementById("viewer");
-const frame = document.getElementById("frame");
+const note = GameDiagnostics.note;
+const player = new GameViewer({hub: HUB, title: TITLE, gameUrl, note, onOpen: zone => {
+    GameLibrary.remember(HUB, zone);
+    const [id, label] = ESM_NOTES[zone.id] || [];
+    esmNote.hidden = !id; esmNote.dataset.id = id; esmButton.textContent = label || "";
+}});
+const openZone = zone => player.open(zone);
+GameDiagnostics.onError(() => {
+    if (player.active) player.fail("The game reported an error. If it stays blank, retry or use More for other launch options.");
+});
 let zones = [];
 
 // Wait this long for a source to answer with headers before moving on to the next.
@@ -93,6 +93,10 @@ function render(filter) {
     }
     grid.replaceChildren(rows);
     count.textContent = shown.length + " of " + zones.length;
+    document.getElementById("empty-state").hidden = shown.length > 0;
+    const other = document.getElementById("other-catalog");
+    other.href = (HUB === "ugs" ? "gnmath.html" : "ugs.html") + "?q=" + encodeURIComponent(filter);
+    other.textContent = HUB === "ugs" ? "Search the main Games collection" : "Search UGS single-file games";
 }
 
 // Retro Bowl College's files come from a repo esm.sh refuses to serve, so on networks
@@ -105,167 +109,12 @@ const esmButton = document.createElement("button");
 esmButton.type = "button";
 esmButton.addEventListener("click", () => { const z = zones.find((z) => z.id === +esmNote.dataset.id); if (z) openZone(z); });
 esmNote.append(esmButton);
-document.getElementById("viewer-author").after(esmNote);
+document.getElementById("advanced-actions").prepend(esmNote);
 
-let gameFile = "";
-function openZone(zone) {
-    if (zone.url?.startsWith("http")) { window.open(zone.url, "_blank", "noopener"); return; }
-    document.getElementById("viewer-title").textContent = zone.name;
-    document.getElementById("viewer-author").textContent = zone.author ? "by " + zone.author : "";
-    const [esmId, esmLabel] = ESM_NOTES[zone.id] || [];
-    esmNote.hidden = !esmId;
-    esmNote.dataset.id = esmId;
-    esmButton.textContent = esmLabel;
-    gameFile = zone.localUrl ? "" : gamePath(zone);
-    const url = gameUrl(zone);
-    // The jsDelivr launcher only supports games from the remote catalog.
-    const jsdTab = document.getElementById("jsdtab");
-    if (jsdTab) jsdTab.hidden = !!zone.localUrl;
-    note("open", zone.id + " " + url);
-    frame.src = url;
-    frame.title = zone.name;
-    viewer.classList.add("open");
-    document.title = zone.name;
-    history.replaceState(null, "", "?id=" + encodeURIComponent(zone.id));
-}
-
-document.getElementById("close").addEventListener("click", () => {
-    viewer.classList.remove("open");
-    frame.src = "about:blank";
-    document.title = TITLE;
-    history.replaceState(null, "", location.pathname);
+document.getElementById("clear-search").addEventListener("click", () => {
+    search.value = ""; render(""); search.focus();
 });
-document.getElementById("fullscreen").addEventListener("click", () => frame.requestFullscreen && frame.requestFullscreen());
-// Hub pages bounce out when not framed, so the new tab gets this viewer, which reopens ?id=.
-document.getElementById("newtab").addEventListener("click", () => window.open(location.href, "_blank"));
-// play.svg runs the game inside a jsDelivr tab, for filters that only let jsDelivr tabs load jsDelivr files. sw.js fixes don't apply there.
-if (HUB === "ugs") {
-    document.getElementById("gametab").addEventListener("click", () => window.open(hubUrl(gameFile), "_blank", "noopener"));
-} else {
-    document.getElementById("jsdtab").addEventListener("click", () => window.open("https://cdn.jsdelivr.net/gh/Xnogsis/larp.garden@main/play.svg#gh/" + REPO + "@main/" + gameFile, "_blank", "noopener"));
-}
-document.getElementById("hidebar").addEventListener("click", () => viewer.classList.add("nobar"));
-document.getElementById("showbar").addEventListener("click", () => viewer.classList.remove("nobar"));
-// The new tab has our origin, so sw.js still serves the iframe; only the address bar shows about:blank.
-document.getElementById("blank").addEventListener("click", () => {
-    const w = window.open("about:blank");
-    if (!w) return;
-    const d = w.document;
-    d.title = document.title;
-    const style = d.createElement("style");
-    style.textContent = "body{margin:0}iframe{border:0;width:100vw;height:100vh}";
-    const iframe = d.createElement("iframe");
-    iframe.title = frame.title;
-    iframe.allow = "fullscreen; autoplay; gamepad";
-    iframe.src = frame.src;
-    d.head.append(style);
-    d.body.append(iframe);
-});
-// Debug panel for when a game stays black and devtools are out of reach. Hub pages call
-// parent.lgDebug(window) as they start (sw.js injects the call), so their errors and failed
-// loads are collected here; the "debug" button shows them along with what the browser supports.
-const debugLog = [];
-const debugPanel = document.createElement("div");
-const debugText = document.createElement("pre");
-let gpu;
-function note(kind, msg) {
-    if (debugLog.length >= 300) debugLog.shift();
-    debugLog.push((performance.now() / 1000).toFixed(1).padStart(6) + "s " + kind + " " + String(msg).slice(0, 400));
-    if (debugPanel.isConnected) showDebug();
-}
-function describe(x) {
-    return x instanceof Error ? x.stack || x.message : typeof x === "object" ? (() => { try { return JSON.stringify(x); } catch (_) { return String(x); } })() : String(x);
-}
-window.lgDebug = (win) => {
-    note("page", win.location.href);
-    win.performance.setResourceTimingBufferSize(5000);
-    win.addEventListener("error", (e) => {
-        const el = e.target;
-        if (el && el !== win && (el.src || el.href)) {
-            const url = new URL(el.src || el.href, win.location.href);
-            note("load failed", el.localName + " " + url.href);
-            if (url.origin === location.origin && /^https?:$/.test(url.protocol)) {
-                win.fetch(url.href, { method: "HEAD", cache: "no-store" }).then(
-                    (r) => note("asset HEAD", r.status + " " + r.headers.get("content-type") + " " + url.href),
-                    (e) => note("asset HEAD failed", e.message + " " + url.href)
-                );
-            }
-        }
-        else note("error", e.message + (e.filename ? " @ " + e.filename + ":" + e.lineno : ""));
-    }, true);
-    win.addEventListener("unhandledrejection", (e) => note("rejection", describe(e.reason)));
-    for (const level of ["error", "warn"]) {
-        const orig = win.console[level];
-        win.console[level] = (...args) => { note("console." + level, args.map(describe).join(" ")); return orig.apply(win.console, args); };
-    }
-    const fetch0 = win.fetch;
-    win.fetch = (...args) => fetch0.apply(win, args).then(
-        (r) => { if (!r.ok && r.type !== "opaque") note("fetch " + r.status, r.url); return r; },
-        (e) => { note("fetch failed", (args[0] && args[0].url) || args[0]); throw e; });
-    const open0 = win.XMLHttpRequest.prototype.open;
-    win.XMLHttpRequest.prototype.open = function (method, url) {
-        this.addEventListener("loadend", () => { if (!this.status || this.status >= 400) note("xhr " + (this.status || "failed"), url); });
-        return open0.apply(this, arguments);
-    };
-};
-// Where a slow loading bar spends its time: per host, how many files and how long each took.
-function loadTiming() {
-    let list;
-    try { list = frame.contentWindow.performance.getEntriesByType("resource"); } catch (_) { return []; }
-    if (!list.length) return [];
-    const hosts = {};
-    for (const e of list) (hosts[new URL(e.name).host] ||= []).push(e);
-    return ["loads: " + list.length + " files"].concat(
-        Object.entries(hosts).sort((a, b) => b[1].length - a[1].length).map(([host, es]) => {
-            const ms = es.map((e) => Math.round(e.duration)).sort((a, b) => a - b);
-            const done = Math.max(...es.map((e) => e.responseEnd)) / 1000;
-            return "  " + host + ": " + ms.length + " files, median " + ms[ms.length >> 1] + "ms, slowest " +
-                ms[ms.length - 1] + "ms, all done " + done.toFixed(1) + "s after the game opened";
-        }));
-}
-function showDebug() {
-    if (!gpu) {
-        const c = document.createElement("canvas");
-        const gl = c.getContext("webgl2") || c.getContext("webgl");
-        const info = gl && gl.getExtension("WEBGL_debug_renderer_info");
-        gpu = !gl ? "unavailable" : (gl instanceof WebGLRenderingContext ? "webgl1 " : "webgl2 ")
-            + gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER);
-    }
-    let canvases = "n/a";
-    try { canvases = [...frame.contentDocument.querySelectorAll("canvas")].map((c) => c.width + "x" + c.height).join(", ") || "none"; } catch (_) { /* cross-origin page */ }
-    debugText.textContent = [
-        "browser: " + navigator.userAgent,
-        "webgl: " + gpu,
-        "service worker: " + (navigator.serviceWorker && navigator.serviceWorker.controller ? "active" : "NOT controlling this page"),
-        "game: " + frame.src,
-        "game canvases: " + canvases,
-        ...loadTiming(),
-        "",
-    ].concat(debugLog.length ? debugLog : ["(nothing logged yet)"]).join("\n");
-}
-debugPanel.id = "debug";
-const debugBar = document.createElement("div");
-const copyBtn = document.createElement("button");
-copyBtn.type = "button";
-copyBtn.textContent = "copy";
-copyBtn.addEventListener("click", () => navigator.clipboard.writeText(debugText.textContent).then(
-    () => { copyBtn.textContent = "copied"; }, () => getSelection().selectAllChildren(debugText)));
-const hideBtn = document.createElement("button");
-hideBtn.type = "button";
-hideBtn.textContent = "close";
-hideBtn.addEventListener("click", () => debugPanel.remove());
-debugBar.append("debug log ", copyBtn, " ", hideBtn);
-debugPanel.append(debugBar, debugText);
-const debugBtn = document.createElement("button");
-debugBtn.type = "button";
-debugBtn.textContent = "debug";
-debugBtn.addEventListener("click", () => {
-    if (debugPanel.isConnected) return debugPanel.remove();
-    copyBtn.textContent = "copy";
-    viewer.append(debugPanel);
-    showDebug();
-});
-document.getElementById("fullscreen").before(debugBtn);
+document.getElementById("catalog-retry").addEventListener("click", () => location.reload());
 
 const themeBtn = document.getElementById("theme");
 const paintTheme = () => { themeBtn.textContent = document.documentElement.classList.contains("dark") ? "Light" : "Dark"; };
@@ -282,32 +131,25 @@ search.addEventListener("input", () => {
 });
 
 const swReady = "serviceWorker" in navigator
-    ? navigator.serviceWorker.register("sw.js", { scope: "/" }).then((reg) => {
-        // sw.js skipWaiting()s and claims clients, so an update still installing when the
-        // page loads becomes the controller shortly; hold off until it does or an old
-        // worker would answer /hub/ paths it doesn't know about.
-        const next = reg.installing || reg.waiting;
-        if (!next) return navigator.serviceWorker.ready;
-        return new Promise((r) => {
-            navigator.serviceWorker.addEventListener("controllerchange", r, { once: true });
-            // A failed update never fires controllerchange; carry on with whatever worker is active.
-            next.addEventListener("statechange", () => { if (next.state === "redundant") r(navigator.serviceWorker.ready); });
-        });
-    })
-    : Promise.reject(new Error(location.protocol === "http:"
-        ? "service workers need https; open https://" + location.host + " instead"
-        : "no service worker support"));
+    ? Promise.race([
+        navigator.serviceWorker.register("sw.js", {scope: "/", updateViaCache: "none"}).then(async () => {
+            await navigator.serviceWorker.ready;
+            if (!navigator.serviceWorker.controller) await new Promise(resolve => navigator.serviceWorker.addEventListener("controllerchange", resolve, {once: true}));
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("The game loader did not start. Reload this page or reset the game loader on Home.")), 15000))
+    ])
+    : Promise.reject(new Error("This browser cannot start the game loader. Use HTTPS and a browser with service worker support."));
 
 const catalog = HUB === "ugs" ? fetchWithTimeout("ugs-games.json") : firstOk("assets", "zones.json");
 Promise.all([catalog.then((r) => { if (!r.ok) throw new Error("catalog HTTP " + r.status); return r.json(); }), swReady])
     .then(([list]) => {
-        zones = [...list.filter((z) => (HUB === "ugs" || z.id >= 0) && z.url && !z.url.startsWith("http")), ...LOCAL_GAMES];
-        if (HUB === "gnmath") zones.sort((a, b) => (a.catalogOrder ?? a.id) - (b.catalogOrder ?? b.id));
+        zones = GameLibrary.catalog(HUB, list);
+        player.setCatalog(zones);
         document.cookie = "access_granted=" + HUB + ".html; max-age=2592000; path=/";
         status.textContent = "";
-        render("");
-        const id = new URLSearchParams(location.search).get("id");
-        const z = id && zones.find((x) => String(x.id) === id);
-        if (z) openZone(z);
+        const params = new URLSearchParams(location.search);
+        search.value = params.get("q") || "";
+        render(search.value);
+        player.restore();
     })
-    .catch((e) => { status.textContent = "Could not load " + TITLE + ": " + e.message; });
+    .catch((e) => { status.textContent = "Could not load " + TITLE + ": " + e.message; document.getElementById("catalog-retry").hidden = false; });

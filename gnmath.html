@@ -3,23 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gn-math</title>
+    <title>Games</title>
     <link rel="stylesheet" href="style.css">
     <script>if (localStorage.theme !== "light") document.documentElement.classList.add("dark");</script>
 </head>
 <body>
     <header id="top">
         <a class="brand" href="home.html">larp.surf</a>
-        <nav><a href="home.html">Home</a><a href="gnmath.html" aria-current="page">Games</a><a href="ugs.html">UGS</a></nav>
+        <nav><a href="home.html">Home</a><a href="gnmath.html" aria-current="page">Games</a><a href="ugs.html">UGS</a><a href="tv.html">Tv</a></nav>
         <button type="button" id="theme">Light</button>
     </header>
     <main>
-        <h1>gn-math</h1>
+        <h1>Games</h1>
+        <p class="lede">The main collection, with illustrated game cards and our locally hosted games. <a href="ugs.html">UGS</a> offers a larger collection of single-file games.</p>
         <div id="bar">
             <input id="search" type="search" placeholder="Search games" autocomplete="off" aria-label="Search games">
             <span id="count"></span>
         </div>
-        <p id="status">Loading the game list...</p>
+        <p id="status" role="status">Loading the game list...</p>
+        <button type="button" id="catalog-retry" hidden>Try loading the catalog again</button>
+        <div id="empty-state" hidden>
+            <h2>No games found</h2>
+            <p>Try a shorter title or check the spelling.</p>
+            <button type="button" id="clear-search">Clear search</button>
+            <p><a id="other-catalog"></a></p>
+        </div>
         <ul id="grid"></ul>
         <footer>
             Games and covers are pulled from Xnogsis's forks of gn-math's public GitHub repos.
@@ -27,23 +35,42 @@
         </footer>
     </main>
 
-    <div id="viewer">
+    <div id="viewer" role="dialog" aria-modal="true" aria-labelledby="viewer-title" tabindex="-1">
         <div id="viewer-bar">
             <button type="button" id="close">&larr; back</button>
             <b id="viewer-title"></b>
             <span id="viewer-author"></span>
-            <button type="button" id="newtab">new tab</button>
-            <button type="button" id="blank">about:blank</button>
-            <button type="button" id="jsdtab">jsDelivr tab</button>
-            <button type="button" id="hidebar">hide bar</button>
-            <button type="button" id="fullscreen">fullscreen</button>
+            <button type="button" id="fullscreen">Fullscreen</button>
+            <details id="viewer-options">
+                <summary>More</summary>
+                <div id="advanced-actions">
+                    <button type="button" id="copy-link">Copy game link</button>
+                    <button type="button" id="newtab">Open viewer in new tab</button>
+                    <button type="button" id="blank">Open in about:blank</button>
+                    <p>Wraps this game in a blank tab. This changes the address shown; it does not provide privacy or isolation.</p>
+                    <button type="button" id="jsdtab">Try jsDelivr launcher</button>
+                    <p>Uses an alternate host when your network blocks the usual game source. Site loader fixes do not apply in this launcher.</p>
+                    <button type="button" id="hidebar">Hide toolbar</button>
+                    <p>Diagnostics below can help report game errors.</p>
+                </div>
+            </details>
         </div>
         <button type="button" id="showbar" title="show bar">&#9662;</button>
-        <iframe id="frame" title="Game" allow="fullscreen; autoplay; gamepad"></iframe>
+        <div id="game-feedback" hidden>
+            <p id="game-status" role="status" aria-live="polite"></p>
+            <button type="button" id="retry-game">Retry game</button>
+            <button type="button" id="alternate-source">Try another source</button>
+            <button type="button" id="dismiss-status">Hide message</button>
+        </div>
+        <iframe id="frame" title="Game" allow="fullscreen; autoplay; gamepad" referrerpolicy="same-origin"></iframe>
     </div>
 
     <!-- Catalog and covers use our forks; sw.js uses Xnogsis/html for the game files. -->
-    <script src="gnmath.js" data-sources="
+    <script src="game-source-pins.js"></script>
+    <script src="game-library.js"></script>
+    <script src="game-diagnostics.js"></script>
+    <script src="game-viewer.js"></script>
+    <script src="gnmath.js" data-title="Games" data-sources="
         https://esm.sh/gh/Xnogsis/
         https://cdn.jsdelivr.net/gh/Xnogsis/
     "></script>

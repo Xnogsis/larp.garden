@@ -35,6 +35,28 @@ jobs:
           # Always the branch tip: a manual dispatch fired right after the Garfield bot's
           # push resolved to the commit before it and deployed stale content.
           ref: main
+      - name: Set up Python for browser checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser checks
+        run: |
+          python -m pip install pillow==11.3.0 playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Check catalog and viewer before publishing
+        run: |
+          node --check gnmath.js
+          node --check game-viewer.js
+          node --check game-library.js
+          node --check game-diagnostics.js
+          node --check home-discovery.js
+          node --check sw.js
+          python .github/scripts/source_pins.py --get Xnogsis/html
+          python tests/catalogs.py
+          python tests/viewer.py
+          python tests/balatro.py
+          python tests/ruffle.py
+          python tests/tv.py
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Cache Celeste assets

@@ -7,7 +7,7 @@
 // are trusted; a malicious commit upstream is a malicious commit here. HUB_CSP below
 // narrows what such a page can do, but cannot isolate it from the origin.
 const REPOS = ["Xnogsis/html"];
-const BRANCH = "main";
+importScripts("/game-source-pins.js");
 const RUFFLE_PATH = "/ruffle/0.2.0-nightly.2025.10.2/";
 const RUFFLE_CDN_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net\/npm\/|esm\.sh\/)@ruffle-rs\/ruffle@0\.2\.0-nightly\.2025\.10\.2\/([\w.-]+)(?:[?#]|$)/;
 const BURRITO_COMMIT = "9cf433220236bb0471ab3a68ec8fe3e0a2799e36";
@@ -229,11 +229,14 @@ function fetchWithTimeout(url, init) {
 }
 
 // First ok response for path across repos and SOURCES; logs every attempt in tried.
-async function firstOk(repos, path, tried) {
+async function firstOk(repos, path, tried, options = {}) {
     for (const repo of repos) {
-        for (const build of SOURCES) {
-            const url = build(repo, BRANCH, path);
-            const res = await fetchWithTimeout(url, { cache: "force-cache" }).catch((e) => e);
+        const ref = GAME_SOURCE_PINS[repo];
+        if (!ref) throw new Error("Unpinned game source: " + repo);
+        const sources = options.source === "jsdelivr" ? [...SOURCES].reverse() : SOURCES;
+        for (const build of sources) {
+            const url = build(repo, ref, path);
+            const res = await fetchWithTimeout(url, { cache: options.retry ? "reload" : "force-cache" }).catch((e) => e);
             tried.push([res.status || res.name, url]);
             if (res.ok) return res;
         }
@@ -241,7 +244,7 @@ async function firstOk(repos, path, tried) {
     return null;
 }
 
-async function fromMirrors(path, hub = "gnmath") {
+async function fromMirrors(path, hub = "gnmath", options = {}) {
     if (hub === "gnmath" && /^198(?:\D[^/]*)?\.html$/.test(path)) {
         return Response.redirect(self.location.origin + "/slope/index.html", 302);
     }
@@ -270,9 +273,9 @@ async function fromMirrors(path, hub = "gnmath") {
     const repos = hub === "ugs" ? ["Xnogsis/ugs-singlefile"] : copy ? [copy.repo] : REPOS;
     const tried = [];
     const missing = () => tried.some(([status]) => status === 404);
-    let res = await firstOk(repos, path, tried);
+    let res = await firstOk(repos, path, tried, options);
     const renamed = RENAMED_RE.exec(path);
-    if (!res && renamed && missing()) res = await firstOk(repos, renamed[1] + ".html", tried);
+    if (!res && renamed && missing()) res = await firstOk(repos, renamed[1] + ".html", tried, options);
     if (!res) {
         // Listed so a user without devtools can paste which source answered what (AbortError = cut off or timed out).
         return new Response("Not found: " + path + "\n\n" + tried.map((t) => t.join(" ")).join("\n"),
@@ -342,7 +345,7 @@ self.addEventListener("fetch", (event) => {
 
     const direct = hubPath(url.pathname);
     if (direct) {
-        event.respondWith(fromMirrors(direct.path, direct.hub));
+        event.respondWith(fromMirrors(direct.path, direct.hub, {source: url.searchParams.get("source"), retry: url.searchParams.has("retry")}));
         return;
     }
 

@@ -62,8 +62,8 @@ try:
         }''')
         page.goto(origin + '/index.html')
         # The root page restores Games; reopening Balatro keeps its saved data.
-        page.wait_for_function("document.getElementById('content-frame').contentWindow.location.pathname === '/gnmath.html'")
-        hub = next(f for f in page.frames if '/gnmath.html' in f.url)
+        page.wait_for_url(origin + '/gnmath.html')
+        hub = page
         hub.get_by_role('searchbox').fill('Balatro')
         hub.locator('#grid .zone').filter(has_text='Balatro').click()
         hub.frame_locator('#frame').locator('#canvas').wait_for()

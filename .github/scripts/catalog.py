@@ -8,8 +8,9 @@ import urllib.request
 from pathlib import Path
 
 from PIL import Image
+from source_pins import read_pins
 
-ZONES_URL = "https://raw.githubusercontent.com/Xnogsis/assets/main/zones.json"
+ZONES_URL = "https://raw.githubusercontent.com/Xnogsis/assets/" + read_pins()["Xnogsis/assets"] + "/zones.json"
 SIZE = (240, 240)
 
 covers = Path(sys.argv[1])

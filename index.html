@@ -24,26 +24,6 @@
             font-weight: bold;
         }
 
-        #content-frame {
-            display: none;
-            width: 100vw;
-            height: 100vh;
-            border: none;
-        }
-
-        /* Unlocked state styles */
-        body.unlocked {
-            overflow: hidden;
-            background-color: transparent;
-        }
-
-        body.unlocked #fake-404 { 
-            display: none; 
-        }
-
-        body.unlocked #content-frame { 
-            display: block; 
-        }
     </style>
 </head>
 <body>
@@ -53,7 +33,6 @@
         <hr><center>nginx/1.18.0</center>
     </div>
 
-    <iframe id="content-frame" src="about:blank"></iframe>
 
     <script>
         // The hub loaders need service workers, which only exist on https.
@@ -61,13 +40,11 @@
             location.replace("https://" + location.host + location.pathname + location.search + location.hash);
         }
 
-        const validTargets = ["antimatter.html", "gnmath.html", "ugs.html", "isaac.html", "balatro/index.html"];
+        const validTargets = ["antimatter.html", "gnmath.html", "ugs.html", "isaac.html", "balatro/index.html", "home.html", "tv.html"];
 
         function unlockSite(targetUrl) {
-            document.body.classList.add('unlocked');
-            document.title = "Clever"; // Restores the original title upon unlocking
-            document.getElementById('content-frame').src = targetUrl;
             document.cookie = "access_granted=" + targetUrl + "; max-age=" + (60 * 60 * 24 * 30) + "; path=/";
+            location.replace(targetUrl);
         }
 
         if (location.search || location.hash) history.replaceState(null, "", location.pathname);
@@ -84,8 +61,7 @@
         }
 
         window.addEventListener('keydown', (e) => {
-            if (document.body.classList.contains('unlocked')) return;
-            if (e.ctrlKey || e.metaKey || e.altKey) return;
+            if (e.key !== "Enter" || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
             unlockSite("gnmath.html");
         });
     </script>

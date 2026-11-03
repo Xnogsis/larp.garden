@@ -20,9 +20,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Pin catalog and game sources
+        run: python3 .github/scripts/source_pins.py --update
+
       - name: Get the covers
         run: |
           git clone --depth 1 https://github.com/Xnogsis/covers.git "$RUNNER_TEMP/covers"
+          git -C "$RUNNER_TEMP/covers" fetch --depth 1 origin "$(python3 .github/scripts/source_pins.py --get Xnogsis/covers)"
+          git -C "$RUNNER_TEMP/covers" checkout --detach FETCH_HEAD
           pip install --quiet pillow==11.3.0
 
       - name: Refresh zones.json and thumbnails
@@ -31,12 +36,14 @@ jobs:
       - name: Refresh UGS catalog
         run: |
           git clone --bare --depth 1 --filter=blob:none https://github.com/Xnogsis/ugs-singlefile.git "$RUNNER_TEMP/ugs"
+          git -C "$RUNNER_TEMP/ugs" fetch --depth 1 origin "$(python3 .github/scripts/source_pins.py --get Xnogsis/ugs-singlefile)"
+          git -C "$RUNNER_TEMP/ugs" update-ref HEAD FETCH_HEAD
           python .github/scripts/ugs-catalog.py "$RUNNER_TEMP/ugs"
 
       - name: Commit if changed
         id: commit
         run: |
-          git add zones.json t ugs-games.json
+          git add zones.json t ugs-games.json game-source-pins.js
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
