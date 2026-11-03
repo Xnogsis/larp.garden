@@ -10,7 +10,7 @@
 <body>
     <header id="top">
         <a class="brand" href="home.html">larp.surf</a>
-        <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a><a href="tv.html">Tv</a></nav>
+        <nav><a href="home.html" aria-current="page">Home</a><a href="gnmath.html">Games</a><a href="ugs.html">UGS</a></nav>
         <button type="button" id="theme">Light</button>
     </header>
 
@@ -18,7 +18,6 @@
         <div>
             <section>
                 <h1>Games</h1>
-                <p class="lede">Whatever you open last is saved, so next visit the 404 page goes straight to it.</p>
                 <p>Single games have been moved to the <a href="gnmath.html">Games tab</a>.</p>
             </section>
 
@@ -36,11 +35,6 @@
                 <button type="button" id="clear-recent" hidden>Clear play history</button>
             </section>
 
-            <section aria-labelledby="featured-title">
-                <h2 id="featured-title">Start playing</h2>
-                <ul id="featured-games" class="discovery-grid"></ul>
-            </section>
-
             <section class="experiments-section">
                 <details class="experiments">
                     <summary>Experiments</summary>
@@ -53,6 +47,7 @@
                 <article>
                     <time datetime="2026-11-02">November 2, 2026</time>
                     <ul>
+                        <li>Removed Start playing and Tv navigation, and shortened the page introductions.</li>
                         <li>Added game links that work with browser Back and Forward, keyboard focus handling, and loading recovery controls.</li>
                         <li>Added recent games and featured picks to Home, explained the two catalogs, linked Tv, and collapsed older updates.</li>
                         <li>Moved alternate launch options into More, added helpful search states, and pinned catalog sources to exact versions.</li>

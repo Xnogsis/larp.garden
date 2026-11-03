@@ -108,9 +108,9 @@ try:
         # Home puts playing first and persists a recent-game link.
         page.goto(base + '/home.html')
         expect(page.locator('#recent-games')).to_contain_text('OvO')
-        expect(page.locator('#featured-games .zone')).to_have_count(6)
+        expect(page.locator('#featured-games')).to_have_count(0)
         assert not page.locator('.older-updates').get_attribute('open')
-        assert page.get_by_role('link', name='Tv', exact=True).count() == 1
+        assert page.get_by_role('link', name='Tv', exact=True).count() == 0
         page.locator('#clear-recent').click()
         expect(page.locator('#recent-empty')).to_be_visible()
         # A failed catalog load offers a visible retry action.

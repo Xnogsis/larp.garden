@@ -21,11 +21,11 @@ try:
             errors = []
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(origin + '/home.html')
-            assert page.locator('a[href="tv.html"]').count() == 1
+            assert page.locator('a[href="tv.html"]').count() == 0
             assert page.locator('.home-notice').count() == 0
             page.goto(origin + '/tv.html')
             assert page.url == origin + '/tv.html'
-            assert page.locator('a[href="tv.html"]').count() == 1
+            assert page.locator('a[href="tv.html"]').count() == 0
             assert page.locator('.tv-action').count() == 0
             assert page.locator('#tv-form').bounding_box()['y'] < page.locator('#tv-help').bounding_box()['y']
             for theme in ('dark', 'light'):
@@ -67,11 +67,11 @@ try:
             context.add_cookies([{'name': 'access_granted', 'value': 'tv.html', 'url': origin}])
             page.goto(origin)
             page.wait_for_url(origin + '/tv.html')
-            assert page.get_by_role('link', name='Tv', exact=True).get_attribute('aria-current') == 'page'
+            assert page.get_by_role('heading', name='Tv', exact=True).is_visible()
             assert not errors, errors
             context.close()
         browser.close()
-    print('Passed: Tv navigation and saved-tab restore, external links, themes and existing layouts')
+    print('Passed: direct Tv access without navigation links and saved-tab restore, external links, themes and existing layouts')
 finally:
     server.shutdown()
     server.server_close()
