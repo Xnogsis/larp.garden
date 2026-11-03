@@ -7887,12 +7887,110 @@
     "id": 868,
     "name": "Geometry Dash",
     "cover": "{COVER_URL}/868.png",
-    "url": "{HTML_URL}/868-F2.html",
+    "url": "{HTML_URL}/868-F3.html",
     "author": "RobTop Games",
     "authorLink": "https://store.steampowered.com/app/322170/Geometry_Dash/",
     "special": [
       "port"
     ],
     "featured": true
+  },
+  {
+    "id": 869,
+    "name": "Five Nights at Freddy's: Into The Pit",
+    "cover": "{COVER_URL}/869.png",
+    "url": "{HTML_URL}/869.html",
+    "author": "Scott Cawthon, Mega Cat Studios, iam8bit",
+    "authorLink": "https://store.steampowered.com/app/2638370/Five_Nights_at_Freddys_Into_the_Pit/",
+    "special": [
+      "port"
+    ],
+    "featured": true
+  },
+  {
+    "id": 870,
+    "name": "Sally Face",
+    "cover": "{COVER_URL}/870.png",
+    "url": "{HTML_URL}/870.html",
+    "author": "Portable Moose",
+    "authorLink": "https://store.steampowered.com/app/541570/Sally_Face_Episode_One/",
+    "special": [
+      "port"
+    ],
+    "featured": true
+  },
+  {
+    "id": 871,
+    "name": "Gamble With Friends",
+    "cover": "{COVER_URL}/871.png",
+    "url": "{HTML_URL}/871.html",
+    "author": "TEAM GWYF, TENSTACK",
+    "authorLink": "https://store.steampowered.com/app/3892270/Gamble_With_Your_Friends/",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 872,
+    "name": "The One Fish",
+    "cover": "{COVER_URL}/872.png",
+    "url": "{HTML_URL}/872.html",
+    "author": "re:try",
+    "authorLink": "https://store.steampowered.com/app/4883580/The_One_Fish/",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 873,
+    "name": "Chain-Chillas",
+    "cover": "{COVER_URL}/873.png",
+    "url": "{HTML_URL}/873.html",
+    "author": "frogtoad",
+    "authorLink": "https://store.steampowered.com/app/3593660/ChainChillas/",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 874,
+    "name": "Wolfenstein 3D",
+    "cover": "{COVER_URL}/874.png",
+    "url": "{HTML_URL}/874.html",
+    "author": "id Software, Bethesda Softworks",
+    "authorLink": "https://store.steampowered.com/app/2270/Wolfenstein_3D/"
+  },
+  {
+    "id": 875,
+    "name": "ROAM0120.EXE",
+    "cover": "{COVER_URL}/875.png",
+    "url": "{HTML_URL}/875-f3.html",
+    "author": "NSO9019",
+    "authorLink": "https://nso9019.itch.io/roam",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 876,
+    "name": "Sugary Spire Exhibition Night: Pizzano's Awesome Night Mod",
+    "cover": "{COVER_URL}/876.png",
+    "url": "{HTML_URL}/876.html",
+    "author": "jon9l",
+    "authorLink": "https://jon9l.itch.io/pizzano-awesome-night",
+    "special": [
+      "port"
+    ]
+  },
+  {
+    "id": 877,
+    "name": "Pet The Cat",
+    "cover": "{COVER_URL}/877.png",
+    "url": "{HTML_URL}/877.html",
+    "author": "MEWSTURBO",
+    "authorLink": "https://store.steampowered.com/app/4605210/Pet_the_Cat/",
+    "special": [
+      "port"
+    ]
   }
 ]
