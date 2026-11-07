@@ -99,9 +99,15 @@ try:
         # Failed mirror responses are visible and retry bypasses cache.
         CatalogHandler.fail_games = True
         page.goto(base + '/gnmath.html?id=1')
-        expect(page.locator('#game-status')).to_contain_text('source returned an error', timeout=20000)
+        page.locator('#viewer-options summary').click()
+        page.get_by_role('button', name='Show diagnostics', exact=True).click()
+        expect(page.locator('#debug pre')).to_contain_text('source returned an error', timeout=20000)
+        expect(page.locator('#game-feedback')).not_to_be_visible()
         assert page.evaluate("async () => (await fetch(document.getElementById('frame').src, {method:'HEAD'})).status") == 502
         CatalogHandler.fail_games = False
+        CatalogHandler.attempts.clear()
+        page.locator('#advanced-retry').click()
+        expect(page.locator('#game-status')).to_contain_text('Game page loaded')
         CatalogHandler.attempts.clear()
         page.locator('#alternate-source').click()
         expect(page.locator('#game-status')).to_contain_text('Game page loaded')
@@ -112,7 +118,10 @@ try:
         expect(page.locator('#viewer')).not_to_be_visible()
         # Errors raised before iframe load reach the visible recovery controls.
         page.goto(base + '/gnmath.html?id=3')
-        expect(page.locator('#game-status')).to_contain_text('game reported an error')
+        page.locator('#viewer-options summary').click()
+        page.get_by_role('button', name='Show diagnostics', exact=True).click()
+        expect(page.locator('#debug pre')).to_contain_text('game reported an error')
+        expect(page.locator('#game-feedback')).not_to_be_visible()
         assert len(errors) == 1 and 'fixture startup failed' in errors[0], errors
         errors.clear()
         page.locator('#close').click()

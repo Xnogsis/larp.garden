@@ -159,7 +159,12 @@ window.GameViewer = class GameViewer {
         old.replaceWith(frame);
         this.timers.push(setTimeout(() => this.status('Still loading. Large games can be slow. You can retry or try another source; More has additional launch options.'), 30000));
     }
-    fail(message) { this.failed = true; this.clearTimers(); this.status(message); }
+    fail(message) {
+        this.failed = true;
+        this.clearTimers();
+        this.feedback.hidden = true;
+        this.note('viewer error', message);
+    }
     keydown(event) {
         if (!this.active) return;
         if (event.key === 'Escape') {
