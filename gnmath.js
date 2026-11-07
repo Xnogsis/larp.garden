@@ -12,6 +12,7 @@ const at = (src, repo, path) => src + repo + "@" + GAME_SOURCE_PINS["Xnogsis/" +
 const grid = document.getElementById("grid");
 const status = document.getElementById("status");
 const search = document.getElementById("search");
+search.value = new URLSearchParams(location.search).get("q") || "";
 const count = document.getElementById("count");
 const note = GameDiagnostics.note;
 const player = new GameViewer({hub: HUB, title: TITLE, gameUrl, note, onOpen: zone => {
@@ -166,8 +167,6 @@ Promise.all([catalog.then((r) => { if (!r.ok) throw new Error("catalog HTTP " + 
         player.setCatalog(zones);
         document.cookie = "access_granted=" + HUB + ".html; max-age=2592000; path=/";
         status.textContent = "";
-        const params = new URLSearchParams(location.search);
-        search.value = params.get("q") || "";
         render(search.value);
         player.restore();
     })

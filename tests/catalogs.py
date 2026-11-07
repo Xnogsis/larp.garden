@@ -112,6 +112,21 @@ try:
             assert page.locator('#jsdtab').is_visible()
             assert not errors, errors
             page.close()
+        # Preserve text entered while a slow catalog is still loading.
+        loading_context = browser.new_context()
+        loading_page = loading_context.new_page()
+        pending_catalog = []
+        loading_page.route(base + '/zones.json', lambda route: pending_catalog.append(route))
+        loading_page.goto(base + '/gnmath.html?q=oldfilter', wait_until='domcontentloaded')
+        expect(loading_page.get_by_role('searchbox')).to_have_value('oldfilter')
+        loading_page.get_by_role('searchbox').fill('Biotomata')
+        loading_page.wait_for_timeout(200)
+        assert len(pending_catalog) == 1
+        pending_catalog[0].fulfill(content_type='application/json', body=(root / 'zones.json').read_text())
+        expect(loading_page.locator('#grid .zone')).to_have_count(1)
+        expect(loading_page.get_by_role('button', name='Biotomata', exact=True)).to_be_visible()
+        expect(loading_page.get_by_role('searchbox')).to_have_value('Biotomata')
+        loading_context.close()
         browser.close()
     print('Passed: UGS navigation, full catalog, search, viewer, game links, saved tab, mobile layout, gn-math regression')
 finally:
