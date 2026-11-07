@@ -34,15 +34,31 @@ try:
         page = context.new_page()
         page.goto(base + '/gnmath.html?id=0', wait_until='domcontentloaded')
         expect(page.locator('#viewer')).to_be_visible()
-        page.evaluate("GameDiagnostics.note('error', 'Crash at https://assets.example/game.js?token=private-value#private-fragment')")
+        game = page.frame_locator('#frame')
+        game.locator('#game-control').wait_for()
+        page.evaluate("window.diagnosticEvents=[]; GameDiagnostics.onEvent(event=>diagnosticEvents.push(event))")
+        game.locator('body').evaluate("""() => {
+            for (const src of ['https://account.y8.com/api/user_data/autologin?callback=test',
+                'https://cdn.jsdelivr.net/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/prebid4.12.0.js']) {
+                const script=document.createElement('script'); script.src=src;
+                const event=new Event('error'); Object.defineProperty(event,'target',{value:script});
+                window.dispatchEvent(event);
+            }
+        }""")
+        page.wait_for_timeout(1400)
+        assert len(reports) == 0, reports
+        assert page.evaluate("diagnosticEvents.filter(event=>event.kind==='optional script').length") == 2
+        # Use an actual Error created in the game realm: instanceof in the parent fails.
+        game.locator('body').evaluate("() => { Promise.reject(new Error('Crash at https://assets.example/game.js?token=private-value#private-fragment')); }")
         page.wait_for_timeout(1800)
         assert len(reports) == 1, reports
         assert reports[0]['mode'] == 'auto' and reports[0]['game']['id'] == '0'
+        assert 'Error: Crash at' in reports[0]['error'] and reports[0]['error'] != '{}'
         assert 'private-value' not in json.dumps(reports)
         assert 'private-fragment' not in json.dumps(reports)
         expect(page.locator('#game-feedback')).not_to_be_visible()
         # The script event and viewer error coalesce; a repeated crash is deduplicated.
-        page.evaluate("for(let i=0;i<10;i++) GameDiagnostics.note('error', 'Crash at https://assets.example/game.js?token=private-value#private-fragment')")
+        page.evaluate("const crash=diagnosticEvents.find(event=>event.kind==='rejection').message; for(let i=0;i<10;i++) GameDiagnostics.note('error', crash)")
         page.wait_for_timeout(1500)
         assert len(reports) == 1
         page.locator('#viewer-options summary').click()
@@ -59,9 +75,12 @@ try:
         # A manual report works while automatic reporting is disabled.
         page.locator('#viewer-options summary').click()
         page.locator('#report-game').click()
+        game.locator('body').evaluate("() => { Promise.reject(new DOMException('Cross-origin worker registration denied', 'SecurityError')); }")
+        page.wait_for_function("diagnosticEvents.some(event=>event.kind==='rejection' && event.message.includes('SecurityError: Cross-origin worker registration denied'))")
         page.locator('#report-description').fill('The game froze after selecting the first level.')
         preview = page.locator('#report-preview').text_content()
         assert 'private-value' not in preview
+        assert 'SecurityError: Cross-origin worker registration denied' in preview
         page.locator('#send-report').click()
         expect(page.locator('#report-result')).to_have_text('Report sent. Thank you.')
         assert len(reports) == 2 and reports[1]['mode'] == 'manual'

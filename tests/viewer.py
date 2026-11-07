@@ -24,11 +24,17 @@ try:
             assert page.url == base + '/'
             assert page.locator('#fake-404').is_visible()
         for key in ['a', 'Space', 'ArrowDown', 'Tab', 'Enter']:
-            page.context.clear_cookies()
-            page.goto(base + '/')
-            expect(page.locator('#fake-404')).to_be_visible()
-            page.keyboard.press(key)
-            page.wait_for_url(base + '/gnmath.html')
+            # Fresh contexts prevent a previous catalog's late saved-tab cookie
+            # from racing the next visit to the entry page.
+            entry_context = browser.new_context()
+            entry = entry_context.new_page()
+            entry.goto(base + '/')
+            expect(entry.locator('#fake-404')).to_be_visible()
+            entry.keyboard.press(key)
+            entry.wait_for_url(base + '/gnmath.html')
+            entry_context.close()
+        page.keyboard.press('Enter')
+        page.wait_for_url(base + '/gnmath.html')
         page.locator('#grid .zone').first.wait_for()
         # A new worker must control the catalog before a returning visitor plays.
         CatalogHandler.worker_revision = 2

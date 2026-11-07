@@ -28,6 +28,23 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    // Snowbattle's original host's /js/ wrappers resolve at the CDN root and 404.
+    ["wnasmile/LAMAR@main/snowbattle/", body => body.replace(
+        /<script\b[^>]*\ssrc=["']\/js\/(?:main|lib)\.js["'][^>]*>\s*<\/script\s*>/gi, ""
+    )],
+    // A game cannot register an offline-cache worker from another origin. The hub
+    // already has its own worker; keep Block Blast's actual Unity setup intact.
+    ["bubblfan/bl/ServiceWorker.js", body => body.replace(
+        /window\.addEventListener\("load", function \(\) \{\s*if \("serviceWorker" in navigator\) \{\s*navigator\.serviceWorker\.register\(\s*"https:\/\/cdn\.jsdelivr\.net\/gh\/bubblfan\/bl\/ServiceWorker\.js",?\s*\);\s*\}\s*\}\);/, ""
+    )],
+    // Bridge Race's save-data promise resolves before createUnityInstance does.
+    // Replay its early SendMessage calls once Unity has returned the real instance.
+    ["bridge-race-save", body => body.replace(
+        "var unityGameInstance = null;",
+        "var pendingUnityMessages = []; var unityGameInstance = {SendMessage: (...args) => pendingUnityMessages.push(args)};"
+    ).replace("unityGameInstance = unityInstance;",
+        "unityGameInstance = unityInstance; for (const args of pendingUnityMessages.splice(0)) unityInstance.SendMessage(...args);"
+    )],
     // Let Moto X3M 3's pinned, CORS-enabled scripts report useful error details.
     ["58d9d25357dc8597da2691dc003f35c4ca25ac65/moto3.js", (body) => body.replaceAll(
         '<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/bubbls/ruffle@58d9d25357dc8597da2691dc003f35c4ca25ac65/',

@@ -17,8 +17,23 @@ function note(kind, msg) {
     eventListeners.forEach(callback => { try { callback({kind, message:String(msg).slice(0,2000)}); } catch (_) { /* Reporting must never interrupt a game. */ } });
     if (kind === "error" || kind === "rejection") errorListeners.forEach(callback => callback(kind, msg));
 }
-function describe(x) {
-    return x instanceof Error ? x.stack || x.message : typeof x === "object" ? (() => { try { return JSON.stringify(x); } catch (_) { return String(x); } })() : String(x);
+function describe(value) {
+    // iframe Errors and DOMExceptions belong to another realm, so instanceof Error fails.
+    try {
+        if (value && typeof value === "object") {
+            if (typeof value.stack === "string" && value.stack) return value.stack;
+            if (typeof value.message === "string") return (value.name || "Error") + ": " + value.message;
+            const json = JSON.stringify(value);
+            return json && json !== "{}" ? json : Object.prototype.toString.call(value) + " (no error details provided)";
+        }
+        return String(value);
+    } catch (_) { return "Unable to read game error details"; }
+}
+function optionalScript(url) {
+    // Account auto-login and this ad bidder do not load the game's engine or assets.
+    return (url.hostname === "account.y8.com" && url.pathname === "/api/user_data/autologin")
+        || (/^(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net|esm\.sh)$/.test(url.hostname)
+            && /^\/gh\/bubblfan\/ovo-3-dimension@[a-f0-9]{40}\/prebid4\.12\.0\.js$/.test(url.pathname));
 }
 window.lgDebug = (win) => {
     const log = (kind, message) => { if (win === gameFrame().contentWindow) note(kind, message); };
@@ -29,7 +44,7 @@ window.lgDebug = (win) => {
         if (el && el !== win && (el.src || el.href)) {
             const url = new URL(el.src || el.href, win.location.href);
             log("load failed", el.localName + " " + url.href);
-            if (el.localName === "script") log("error", "Game script failed to load: " + url.href);
+            if (el.localName === "script") log(optionalScript(url) ? "optional script" : "error", "Game script failed to load: " + url.href);
             if (url.origin === location.origin && /^https?:$/.test(url.protocol)) {
                 win.fetch(url.href, { method: "HEAD", cache: "no-store" }).then(
                     (r) => log("asset HEAD", r.status + " " + r.headers.get("content-type") + " " + url.href),

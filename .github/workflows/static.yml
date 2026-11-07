@@ -54,6 +54,7 @@ jobs:
           node --check game-reporting-config.js
           node --check home-discovery.js
           node --check sw.js
+          node --test tests/loader-fixes.cjs
           python .github/scripts/source_pins.py --get Xnogsis/html
           python tests/catalogs.py
           python tests/viewer.py
