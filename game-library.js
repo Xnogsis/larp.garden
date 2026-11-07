@@ -4,6 +4,7 @@ const LOCAL_GAMES = [
     { id: "antimatter", catalogOrder: 877.1, name: "Antimatter Dimensions", author: "IvarK", localUrl: "antimatter.html", cover: "icons/antimatter.webp" },
     { id: "isaac", catalogOrder: 877.2, name: "The Binding of Isaac: Repentance+", author: "chiikabu", localUrl: "isaac.html", cover: "icons/isaac-face.webp" },
     { id: "balatro", catalogOrder: 877.3, name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
+    { id: "biotomata", catalogOrder: 882.1, name: "Biotomata", author: "Talos0248", localUrl: "hub/gnmath/biotomata/index.html", cover: "icons/biotomata.webp" },
 ];
 
     function catalog(hub, list) {

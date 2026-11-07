@@ -11,7 +11,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 PIN_FILE = ROOT / 'game-source-pins.js'
-REPOS = ['Xnogsis/html', 'Xnogsis/ugs-singlefile', 'Xnogsis/html55-new', 'Xnogsis/covers', 'Xnogsis/assets']
+REPOS = ['Xnogsis/Biotomata-Game', 'Xnogsis/html', 'Xnogsis/ugs-singlefile', 'Xnogsis/html55-new', 'Xnogsis/covers', 'Xnogsis/assets']
 
 
 def read_pins():

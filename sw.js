@@ -18,6 +18,8 @@ const BURRITO_LOADER_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdeliv
 // repo (asking the others first costs a slow esm.sh 404 per file). Keyed by catalog id,
 // since the daily catalog refresh can move a game to "<id>-fix.html".
 const COPIES = {
+    // Standalone repositories can mount at a hub folder without an upstream catalog id.
+    "biotomata": { repo: "Xnogsis/Biotomata-Game", dir: "biotomata/", stripDir: true },
     // gn-math's Moto X3M pulls from repos that are gone; this copy has all 50 levels.
     "96": { repo: "Xnogsis/html55-new", dir: "embeds/moto_x3m/" },
     // gn-math's old Eaglercraft versions are "this version is broken" stubs; UGS has offline single-file builds.
@@ -303,7 +305,8 @@ async function fromMirrors(path, hub = "gnmath", options = {}) {
     const repos = hub === "ugs" ? ["Xnogsis/ugs-singlefile"] : copy ? [copy.repo] : REPOS;
     const tried = [];
     const missing = () => tried.some(([status]) => status === 404);
-    let res = await firstOk(repos, path, tried, options);
+    const sourcePath = copy?.stripDir ? path.slice(copy.dir.length) : path;
+    let res = await firstOk(repos, sourcePath, tried, options);
     const renamed = RENAMED_RE.exec(path);
     if (!res && renamed && missing()) res = await firstOk(repos, renamed[1] + ".html", tried, options);
     if (!res) {

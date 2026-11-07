@@ -22,3 +22,10 @@ These icons are game artwork from the official game website or publisher listing
 - Original image (older official App Store face icon): https://is3-ssl.mzstatic.com/image/thumb/Purple82/v4/4b/8e/99/4b8e9989-4b23-5ead-a43e-4ad4fb3ed1ba/source/512x512bb.jpg
 - Listing showing this icon: https://www.pocketgamer.fr/games/017560/the-binding-of-isaac-rebirth/
 - Local file: `isaac-face.webp`
+
+## Biotomata
+
+- Game creator: Talos0248
+- Source: https://github.com/Xnogsis/Biotomata-Game/tree/30c7507d0c0cfa7501c7c21e0a5df95b3075f5d8
+- Original image: `favicon.ico` from that commit
+- Local file: `biotomata.webp`

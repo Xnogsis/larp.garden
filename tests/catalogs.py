@@ -86,6 +86,7 @@ try:
                 ('antimatter', 'Antimatter Dimensions', 'antimatter.html'),
                 ('isaac', 'The Binding of Isaac: Repentance+', 'isaac.html'),
                 ('balatro', 'Balatro', 'balatro/index.html'),
+                ('biotomata', 'Biotomata', 'hub/gnmath/biotomata/index.html'),
             ]:
                 page.route(base + '/' + path, lambda route: route.fulfill(
                     content_type='text/html', body='<title>Local game</title>'))

@@ -3,7 +3,7 @@ const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const worker = {self:{location:{origin:'https://larp.surf'}, addEventListener(){}}, importScripts(){}};
+const worker = {Response, Headers, self:{location:{origin:'https://larp.surf'}, addEventListener(){}}, importScripts(){}};
 vm.runInNewContext(fs.readFileSync('sw.js', 'utf8') + '\nglobalThis.rewrite = body => {for(const [marker,fix] of HTML_FIXES) if(body.includes(marker)) body=fix(body);return body;};', worker);
 
 test('Bridge Race delivers save data after Unity resolves its instance', async () => {
@@ -73,4 +73,27 @@ globalThis.done = (async () => {
     assert.equal(context.frameworkConfig.codeUrl, 'blob:merged-wasm');
     assert.equal(context.frameworkConfig.gameId, 'escape-road-3');
     assert.equal(context.frameworkConfig.eventLog, false);
+});
+
+
+test('Biotomata routes its HTML, module, stylesheet, fonts and images to the pinned repository root', async () => {
+    const original = worker.firstOk;
+    const calls = [];
+    worker.firstOk = async (repos, path) => {
+        calls.push({repos:Array.from(repos), path});
+        return new Response(path.endsWith('.html') ? '<!doctype html><head></head><body></body>' : 'fixture');
+    };
+    try {
+        for (const [path, type] of [
+            ['index.html','text/html'], ['assets/index-CH2_gaqm.js','text/javascript'],
+            ['assets/style-BPL8IerJ.css','text/css'], ['assets/Aldrich-Regular-BJ2Af9cL.ttf','font/ttf'],
+            ['img/organs/unicellular/eyes.jpg','image/jpeg'],
+        ]) {
+            const response = await worker.fromMirrors('biotomata/' + path);
+            assert.equal(response.status, 200);
+            assert.equal(response.headers.get('Content-Type'), type);
+            assert.deepEqual(calls.at(-1), {repos:['Xnogsis/Biotomata-Game'], path});
+            if (path.endsWith('.html')) assert.ok((await response.text()).includes('parent.lgDebug'));
+        }
+    } finally { worker.firstOk = original; }
 });

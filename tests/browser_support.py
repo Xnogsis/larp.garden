@@ -8,7 +8,7 @@ ADAPTER = r'''
 const fixtureFetch = self.fetch.bind(self);
 self.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input.url;
-    const game = /\/gh\/Xnogsis\/(?:html|ugs-singlefile|html55-new)@([a-f0-9]{40})\/(.+?)(?:\?raw)?$/.exec(url);
+    const game = /\/gh\/Xnogsis\/(?:html|ugs-singlefile|html55-new|Biotomata-Game)@([a-f0-9]{40})\/(.+?)(?:\?raw)?$/.exec(url);
     if (game) return fixtureFetch('/fixture/' + encodeURIComponent(game[2]) + '?ref=' + game[1] + '&mirror=' + (url.includes('esm.sh') ? 'esm' : 'jsdelivr') + '&method=' + (init?.method || 'GET'));
     return fixtureFetch(input, init);
 };
