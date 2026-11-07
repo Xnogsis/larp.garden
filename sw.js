@@ -19,6 +19,7 @@ const BURRITO_LOADER_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdeliv
 // since the daily catalog refresh can move a game to "<id>-fix.html".
 const COPIES = {
     // Standalone repositories can mount at a hub folder without an upstream catalog id.
+    "prestige-tree": { repo: "Xnogsis/Prestige-Tree", dir: "prestige-tree/", stripDir: true },
     "biotomata": { repo: "Xnogsis/Biotomata-Game", dir: "biotomata/", stripDir: true },
     // gn-math's Moto X3M pulls from repos that are gone; this copy has all 50 levels.
     "96": { repo: "Xnogsis/html55-new", dir: "embeds/moto_x3m/" },
@@ -30,6 +31,10 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    // The bare Vue package resolves to an ES module on the mirror; this game needs the classic build.
+    ["js/technical/layerSupport.js", body => body.replace(
+        'src="https://cdn.jsdelivr.net/npm/vue@2.6.12"', 'src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.min.js"'
+    )],
     // Escape Road 3's framework reads a global config, but its page declares it
     // inside an async loader. Expose the same populated object before loading Unity.
     ["bubblfan/escape-road-3@", body => body.replace(

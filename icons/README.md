@@ -29,3 +29,10 @@ These icons are game artwork from the official game website or publisher listing
 - Source: https://github.com/Xnogsis/Biotomata-Game/tree/30c7507d0c0cfa7501c7c21e0a5df95b3075f5d8
 - Original image: `favicon.ico` from that commit
 - Local file: `biotomata.webp`
+
+## Prestige Tree
+
+- Creator: Jacorb
+- Source: https://github.com/Xnogsis/Prestige-Tree/tree/cec9198c8ce9a5c6d107179871cbe84fab92ae0d
+- Image: the game’s in-game Prestige (`P`) node
+- Local file: `prestige-tree.webp`

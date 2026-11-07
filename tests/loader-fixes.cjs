@@ -97,3 +97,9 @@ test('Biotomata routes its HTML, module, stylesheet, fonts and images to the pin
         }
     } finally { worker.firstOk = original; }
 });
+
+
+test('Prestige Tree uses the classic Vue build', () => {
+    const body = '<script src="js/technical/layerSupport.js"></script><script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>';
+    assert.ok(worker.rewrite(body).includes('src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.min.js"'));
+});

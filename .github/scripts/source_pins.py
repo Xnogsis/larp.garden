@@ -11,7 +11,7 @@ import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 PIN_FILE = ROOT / 'game-source-pins.js'
-REPOS = ['Xnogsis/Biotomata-Game', 'Xnogsis/html', 'Xnogsis/ugs-singlefile', 'Xnogsis/html55-new', 'Xnogsis/covers', 'Xnogsis/assets']
+REPOS = ['Xnogsis/Prestige-Tree', 'Xnogsis/Biotomata-Game', 'Xnogsis/html', 'Xnogsis/ugs-singlefile', 'Xnogsis/html55-new', 'Xnogsis/covers', 'Xnogsis/assets']
 
 
 def read_pins():
@@ -25,7 +25,8 @@ def read_pins():
 def update():
     pins = {}
     for repo in REPOS:
-        output = subprocess.check_output(['git', 'ls-remote', 'https://github.com/' + repo + '.git', 'refs/heads/main'], text=True)
+        branch = 'master' if repo == 'Xnogsis/Prestige-Tree' else 'main'
+        output = subprocess.check_output(['git', 'ls-remote', 'https://github.com/' + repo + '.git', 'refs/heads/' + branch], text=True)
         ref = output.split()[0]
         if not re.fullmatch('[a-f0-9]{40}', ref):
             raise ValueError('Invalid source commit for ' + repo)
