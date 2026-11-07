@@ -37,6 +37,7 @@ function optionalScript(url) {
     // These scripts provide account, advertising or analytics features, not game assets.
     return (url.hostname === "account.y8.com" && url.pathname === "/api/user_data/autologin")
         || (url.hostname === "www.googletagmanager.com" && url.pathname === "/gtag/js")
+        || (url.hostname === "pagead2.googlesyndication.com" && url.pathname.startsWith("/pagead/managed/js/adsense/"))
         || (url.hostname === "imasdk.googleapis.com" && url.pathname === "/js/sdkloader/ima3.js")
         || (url.hostname === "securepubads.g.doubleclick.net" && url.pathname === "/tag/js/gpt.js")
         || (url.hostname === "c.amazon-adsystem.com" && url.pathname === "/aax2/apstag.js")
