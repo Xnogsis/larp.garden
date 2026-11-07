@@ -36,3 +36,9 @@ These icons are game artwork from the official game website or publisher listing
 - Source: https://github.com/Xnogsis/Prestige-Tree/tree/cec9198c8ce9a5c6d107179871cbe84fab92ae0d
 - Image: the game’s in-game Prestige (`P`) node
 - Local file: `prestige-tree.webp`
+
+## Fundamental
+
+- Creator: awWhy
+- Source: https://github.com/Xnogsis/Fundamental/blob/e1e2171e2812dd9013b6a991dce8c824c529b57f/Used_art/Stage.png
+- Local file: `fundamental.webp`

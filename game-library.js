@@ -6,6 +6,7 @@ const LOCAL_GAMES = [
     { id: "balatro", catalogOrder: 877.3, name: "Balatro", author: "LocalThunk", localUrl: "balatro/index.html", cover: "icons/balatro.webp" },
     { id: "biotomata", catalogOrder: 882.1, name: "Biotomata", author: "Talos0248", localUrl: "hub/gnmath/biotomata/index.html", cover: "icons/biotomata.webp" },
     { id: "prestige-tree", catalogOrder: 882.2, name: "Prestige Tree", author: "Jacorb", localUrl: "hub/gnmath/prestige-tree/index.html", cover: "icons/prestige-tree.webp" },
+    { id: "fundamental", catalogOrder: 882.3, name: "Fundamental", author: "awWhy", localUrl: "fundamental/index.html", cover: "icons/fundamental.webp" },
 ];
 
     function catalog(hub, list) {

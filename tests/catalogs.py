@@ -88,13 +88,16 @@ try:
                 ('balatro', 'Balatro', 'balatro/index.html'),
                 ('biotomata', 'Biotomata', 'hub/gnmath/biotomata/index.html'),
                 ('prestige-tree', 'Prestige Tree', 'hub/gnmath/prestige-tree/index.html'),
+                ('fundamental', 'Fundamental', 'fundamental/index.html'),
             ]:
                 page.route(base + '/' + path, lambda route: route.fulfill(
                     content_type='text/html', body='<title>Local game</title>'))
                 page.get_by_role('searchbox').fill(name)
-                card = page.locator('#grid .zone').filter(has_text=name)
+                card = page.get_by_role('button', name=name, exact=True)
                 card.wait_for()
-                page.wait_for_function("document.querySelectorAll('#grid .zone').length === 1")
+                page.wait_for_function("document.querySelectorAll('#grid .zone').length < 10")
+                assert card.get_attribute('data-game-id') == game_id
+                card.scroll_into_view_if_needed()
                 card.locator('img').evaluate('(img) => img.decode()')
                 assert card.locator('img').evaluate('(img) => img.naturalWidth > 0')
                 card.click()

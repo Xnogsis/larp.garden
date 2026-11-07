@@ -1,0 +1,109 @@
+html { --elements-columns-phone: min(var(--elements-columns), 9); }
+
+#notifications {
+    max-height: 33vh;
+    width: 95vw;
+}
+
+.insideTab {
+    gap: 1.2em;
+    margin-top: 1vh;
+}
+
+#buildings {
+    row-gap: 0.2em;
+    width: 100vw;
+    min-width: min-content;
+    max-width: calc(32px + 31.598em);
+}
+
+.buyBuilding, #specials > div { column-gap: 0.15em; }
+.buyBuilding > div:first-of-type, #specials p { flex-direction: column; }
+.buyBuilding > div:first-of-type { width: 100%; }
+.buyBuilding button:first-of-type,
+.buyBuilding > div > p:first-of-type { width: unset; }
+.buyBuilding > div > p:first-of-type > span { white-space: nowrap; }
+
+.buyBuilding > div:last-of-type {
+    flex-shrink: 0;
+    row-gap: 0.16em;
+    width: clamp(12em, 40vw, 12.5em);
+    grid-template-areas: "button button" "buy toggle";
+}
+
+.buyBuilding > div > div > p {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid var(--button-border);
+    border-radius: 3px;
+    height: 1.78em;
+}
+
+.buyBuilding .specialToggle { margin-left: auto; }
+.buyBuilding > div > div > div { display: none; }
+.availableB > div > div > p { border-color: var(--building-afford); }
+
+#challengesMain > div {
+    flex-direction: column;
+    gap: 1.2em;
+}
+
+#elementsGrid { grid-template-columns: repeat(var(--elements-columns-phone), 1fr); }
+#element2 { grid-column: var(--elements-columns-phone); }
+#element5, #element13 { grid-column: calc(var(--elements-columns-phone) - 5); }
+
+#abyssResources,
+#strangeStructures {
+    margin-top: -0.4em;
+    margin-bottom: 0;
+}
+
+#inflation,
+#elementsGrid,
+#strangenessResearch {
+    margin-top: -0.6em;
+    margin-bottom: -0.3em;
+}
+
+#settingsSubtabSettings {
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+}
+
+#logoLinks { align-self: unset; }
+#themeArea > div > div { width: 80vw !important; }
+
+#globalStats {
+    bottom: calc(32px + min(3.9vh, 2.4em) + 7.2616em + 3.2vw);
+    right: 1vw;
+}
+
+#footerStats,
+#footerMain > nav { column-gap: 0.8em; }
+
+#stageSelect {
+    max-width: 60vw;
+    margin-bottom: 0.8vw;
+    gap: 0.8vw;
+}
+
+#subtabs {
+    flex-direction: column-reverse;
+    max-width: unset;
+    margin-left: 2vw;
+    margin-bottom: 0.8vw;
+    gap: 0.8vw;
+}
+
+#shortcuts {
+    flex-direction: column;
+    max-width: unset;
+    margin-right: 2vw;
+    margin-bottom: 0.8vw;
+    gap: 0.8vw;
+}
+
+#shortcuts button,
+#subtabs button { width: 100%; }
