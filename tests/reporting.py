@@ -39,7 +39,13 @@ try:
         page.evaluate("window.diagnosticEvents=[]; GameDiagnostics.onEvent(event=>diagnosticEvents.push(event))")
         game.locator('body').evaluate("""() => {
             for (const src of ['https://account.y8.com/api/user_data/autologin?callback=test',
-                'https://cdn.jsdelivr.net/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/prebid4.12.0.js']) {
+                'https://cdn.jsdelivr.net/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/prebid4.12.0.js',
+                'https://cdn.jsdelivr.net/gh/taskmaster773/google-class@cd06df26d3c4d9f73c8151fc13f7b2dc27f3adda/stickman-hook/prebid4.12.0.js',
+                'https://cdn.jsdelivr.net/gh/taskmaster773/google-class@cd06df26d3c4d9f73c8151fc13f7b2dc27f3adda/stickman-hook/',
+                'https://cdn.jsdelivr.net/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/',
+                'https://www.googletagmanager.com/gtag/js?id=test',
+                'https://localstorage.goguardian/xdLocalStorage.js',
+                'https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/ragdoll-hit/null.html?https://imasdk.googleapis.com/js/sdkloader/ima3.js']) {
                 const script=document.createElement('script'); script.src=src;
                 const event=new Event('error'); Object.defineProperty(event,'target',{value:script});
                 window.dispatchEvent(event);
@@ -47,7 +53,7 @@ try:
         }""")
         page.wait_for_timeout(1400)
         assert len(reports) == 0, reports
-        assert page.evaluate("diagnosticEvents.filter(event=>event.kind==='optional script').length") == 2
+        assert page.evaluate("diagnosticEvents.filter(event=>event.kind==='optional script').length") == 8
         # Use an actual Error created in the game realm: instanceof in the parent fails.
         game.locator('body').evaluate("() => { Promise.reject(new Error('Crash at https://assets.example/game.js?token=private-value#private-fragment')); }")
         page.wait_for_timeout(1800)

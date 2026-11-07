@@ -31,6 +31,25 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    // The mod attaches canvas listeners before the canvas exists and fetches translations from a retired sheet.
+    ["Replku/Ovo@", body => body.replace('src="unlockalllevels.js"', `defer src="unlockalllevels.js" onload="getTranslations=async()=>{const json=await(await fetch('languages.json')).json();c2_callFunction('Language > LoadLanguageFile',[JSON.stringify(json)]);globalThis.languageJSON=json;return json}"`)],
+    // This host bridge only calls a Google-host function; local assets need the game's root as base.
+    ["435345345346@", body => body.replace(
+        /<script\b[^>]*src="(https:\/\/cdn\.jsdelivr\.net\/gh\/234sd4w5w45wers5tr-645758574456456\/435345345346@[^/]+\/)js\/window\.js"[^>]*>\s*<\/script>/,
+        '<base href="$1">'
+    )],
+    // These base URLs are blocked by the hub CSP; use the supported GitHub CDN path.
+    ["rawcdn.githack.com/", body => body.replace(
+        /https:\/\/rawcdn\.githack\.com\/([^/]+)\/([^/]+)\/([^/]+)\//g, "https://cdn.jsdelivr.net/gh/$1/$2@$3/"
+    )],
+    ["monster-tracks/webapp/source_min.js", body => body.replace(
+        '<div id="canvas_border">', '<div id="gradient" aria-hidden="true" style="display:none"></div><div id="canvas_border">'
+    )],
+    // Godot's no-argument lookup resolves against the CDN base instead of this document.
+    ["Stinkalistic/UGS@main/MISC/brotato/", body => body.replace(
+        'const GODOT_CONFIG =',
+        'const getRegistration = navigator.serviceWorker?.getRegistration.bind(navigator.serviceWorker); if(getRegistration) navigator.serviceWorker.getRegistration = (url = location.href) => getRegistration(url); const GODOT_CONFIG ='
+    )],
     // The bare Vue package resolves to an ES module on the mirror; this game needs the classic build.
     ["js/technical/layerSupport.js", body => body.replace(
         'src="https://cdn.jsdelivr.net/npm/vue@2.6.12"', 'src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.min.js"'
@@ -98,6 +117,14 @@ function viaEsm(href) {
     return ("https://esm.sh/" + path + (m[3] ? m[3] + "&raw" : "?raw")).replace(/'/g, "%27");
 }
 
+// Public GitHub files remain available when a CDN rejects a large repository.
+function viaRaw(href) {
+    const match = JSDELIVR_RE.exec(href);
+    if (!match || match[1] !== "gh") return null;
+    const file = /^([^/]+)\/([^/@]+)(?:@([^/]+))?\/(.+)$/.exec(match[2]);
+    return file ? `https://raw.githubusercontent.com/${file[1]}/${file[2]}/${!file[3] || file[3] === "latest" ? "HEAD" : file[3]}/${file[4]}` : null;
+}
+
 // bubbls/youtube-playables' ytgame.js is the real YouTube Playables SDK, which
 // waits on a YouTube host that never exists here: getLanguage() pends forever,
 // so game wrappers stall on a black screen before loading their scripts. Its
@@ -155,6 +182,12 @@ async function fixedC3Runtime(request) {
 
 // Cross-origin files that games request and that need replacing: [URL pattern, handler].
 const CROSS_ORIGIN_FIXES = [
+    // Paper.io's mirrored ad SDK is truncated; its no-ad lifecycle still lets the game start.
+    [/^https:\/\/(?:[^/]+\.jsdelivr\.net|esm\.sh)\/gh\/234sd4w5w45wers5tr-645758574456456\/435345345346@[^/]+\/js\/sdk\.js(?:[?#]|$)/, () => new Response(`
+        const emit = name => window.SDK_OPTIONS?.onEvent?.({name});
+        window.sdk = {showBanner: () => {emit('SDK_GAME_PAUSE'); setTimeout(() => emit('SDK_GAME_START'), 0);}};
+        setTimeout(() => emit('SDK_READY'), 0);
+    `, {headers:{"Content-Type":"text/javascript", "Access-Control-Allow-Origin":"*"}})],
     // Opaque CDN script failures cannot trigger the generic mirror fallback.
     [BURRITO_LOADER_RE, (req) => fetch(self.location.origin + "/burrito-bison/" + BURRITO_LOADER_RE.exec(req.url)[1])],
     // Encrypted upstream loaders still construct CDN URLs at runtime.
@@ -173,6 +206,7 @@ const CROSS_ORIGIN_FIXES = [
 const SOURCES = [
     (r, b, p) => viaEsm(`https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`),
     (r, b, p) => `https://cdn.jsdelivr.net/gh/${r}@${b}/${p}`,
+    (r, b, p) => `https://raw.githubusercontent.com/${r}/${b}/${p}`,
 ];
 
 const MIME = {
@@ -267,7 +301,7 @@ async function firstOk(repos, path, tried, options = {}) {
     for (const repo of repos) {
         const ref = GAME_SOURCE_PINS[repo];
         if (!ref) throw new Error("Unpinned game source: " + repo);
-        const sources = options.source === "jsdelivr" ? [...SOURCES].reverse() : SOURCES;
+        const sources = options.source === "jsdelivr" ? [SOURCES[1], SOURCES[0], ...SOURCES.slice(2)] : SOURCES;
         for (const build of sources) {
             const url = build(repo, ref, path);
             const res = await fetchWithTimeout(url, {
@@ -336,6 +370,15 @@ async function fromMirrors(path, hub = "gnmath", options = {}) {
         // An empty src resolves to the document URL, loading HTML as JavaScript.
         body = body.replace(/<script\b(?=[^>]*\ssrc\s*=\s*(["'])\s*\1)[^>]*>\s*<\/script\s*>/gi, "");
         for (const [marker, fix] of HTML_FIXES) if (body.includes(marker)) body = fix(body);
+        // Public CDN scripts support CORS, so report actual exceptions instead of "Script error.".
+        const cdnBase = /<base\b[^>]*href=["']https:\/\/(?:[^/]+\.jsdelivr\.net|esm\.sh)\//i.test(body);
+        body = body.replace(/(<script\b[^>]*>)([\s\S]*?)(<\/script\s*>)/gi, (whole, tag, code, end) => {
+            const src = /\bsrc=["']([^"']+)["']/i.exec(tag)?.[1];
+            if (!src || /\bcrossorigin\b/i.test(tag)) return whole;
+            const publicScript = JSDELIVR_RE.test(src) || /^https:\/\/esm\.sh\//.test(src)
+                || (cdnBase && !/^(?:[a-z][\w+.-]*:|\/\/)/i.test(src));
+            return publicScript ? tag.replace(/<script/i, '<script crossorigin="anonymous"') + code + end : whole;
+        });
         const prelude = hub === "ugs"
             ? '<script>try{parent.lgDebug&&parent.lgDebug(window)}catch(e){}</script>'
             : STAY_FRAMED;
@@ -366,14 +409,30 @@ self.addEventListener("fetch", (event) => {
         if (!JSDELIVR_RE.test(url.href)) return;
         event.respondWith((async () => {
             const req = event.request;
-            const init = req.mode === "navigate"
-                ? {}
-                : { mode: req.mode, credentials: req.credentials, headers: req.headers, redirect: req.redirect };
-            try {
-                const res = await fetch(viaEsm(url.href), init);
-                if (res.ok || res.type === "opaque") return res;
-            } catch (_) { /* fall back to the original */ }
-            return fetch(req);
+            let failed;
+            for (const source of [viaEsm(url.href), url.href, viaRaw(url.href)].filter(Boolean)) {
+                try {
+                    // Public CDNs allow CORS. Opaque responses hide HTTP errors and prevent fallback.
+                    const res = await fetchWithTimeout(source, {mode:"cors", credentials:"omit", headers:req.headers});
+                    if (res.ok) {
+                        const headers = new Headers(res.headers);
+                        const mime = mimeFor(url.pathname);
+                        if (mime) headers.set("Content-Type", mime);
+                        headers.delete("Content-Encoding"); headers.delete("Content-Length");
+                        let body = res.body;
+                        // Paper.io's SDK is next to its app bundle, not next to the HTML page.
+                        if (/\/435345345346@[^/]+\/js\/app-new-gm\.js$/.test(url.pathname)) {
+                            body = (await res.text())
+                                .replace("'sdk.js'", JSON.stringify(new URL("sdk.js", url.href).href))
+                                // The disabled promo feed otherwise fetches the HTML page as JSON.
+                                .replace("'JqIoy':_p2_0x465c('0xae')", "'JqIoy':'data:application/json,%7B%22banners%22:%5B%5D,%22interval%22:0%7D'");
+                        }
+                        return new Response(body, {status:res.status, headers});
+                    }
+                    failed = res;
+                } catch (_) { /* next public source */ }
+            }
+            return failed || new Response("Game asset unavailable", {status:502});
         })());
         return;
     }

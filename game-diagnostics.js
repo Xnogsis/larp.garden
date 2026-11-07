@@ -30,10 +30,21 @@ function describe(value) {
     } catch (_) { return "Unable to read game error details"; }
 }
 function optionalScript(url) {
-    // Account auto-login and this ad bidder do not load the game's engine or assets.
+    // Some ports wrap deliberately disabled ad URLs in a null.html placeholder.
+    if (url.pathname.endsWith('/null.html')) {
+        try { url = new URL(url.search.slice(1)); } catch (_) { return false; }
+    }
+    // These scripts provide account, advertising or analytics features, not game assets.
     return (url.hostname === "account.y8.com" && url.pathname === "/api/user_data/autologin")
-        || (/^(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net|esm\.sh)$/.test(url.hostname)
-            && /^\/gh\/bubblfan\/ovo-3-dimension@[a-f0-9]{40}\/prebid4\.12\.0\.js$/.test(url.pathname));
+        || (url.hostname === "www.googletagmanager.com" && url.pathname === "/gtag/js")
+        || (url.hostname === "imasdk.googleapis.com" && url.pathname === "/js/sdkloader/ima3.js")
+        || (url.hostname === "securepubads.g.doubleclick.net" && url.pathname === "/tag/js/gpt.js")
+        || (url.hostname === "c.amazon-adsystem.com" && url.pathname === "/aax2/apstag.js")
+        || (url.hostname === "a.poki.com" && /\/prebid[\d.]*\.js$/.test(url.pathname))
+        || (url.hostname === "localstorage.goguardian" && url.pathname === "/xdLocalStorage.js")
+        || (/^(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net|esm\.sh|raw\.githubusercontent\.com)$/.test(url.hostname)
+            && (/\/prebid[\d.]*\.js$/.test(url.pathname)
+                || /^\/gh\/(?:bubblfan\/ovo-3-dimension@[^/]+|taskmaster773\/google-class@[^/]+\/stickman-hook)\/$/.test(url.pathname)));
 }
 window.lgDebug = (win) => {
     const log = (kind, message) => { if (win === gameFrame().contentWindow) note(kind, message); };

@@ -9,7 +9,9 @@ const fixtureFetch = self.fetch.bind(self);
 self.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input.url;
     const game = /\/gh\/Xnogsis\/(?:html|ugs-singlefile|html55-new|Biotomata-Game|Prestige-Tree)@([a-f0-9]{40})\/(.+?)(?:\?raw)?$/.exec(url);
-    if (game) return fixtureFetch('/fixture/' + encodeURIComponent(game[2]) + '?ref=' + game[1] + '&mirror=' + (url.includes('esm.sh') ? 'esm' : 'jsdelivr') + '&method=' + (init?.method || 'GET'));
+    const raw = /raw\.githubusercontent\.com\/Xnogsis\/(?:html|ugs-singlefile|html55-new|Biotomata-Game|Prestige-Tree)\/([a-f0-9]{40})\/(.+)$/.exec(url);
+    const match = game || raw;
+    if (match) return fixtureFetch('/fixture/' + encodeURIComponent(match[2]) + '?ref=' + match[1] + '&mirror=' + (raw ? 'raw' : url.includes('esm.sh') ? 'esm' : 'jsdelivr') + '&method=' + (init?.method || 'GET'));
     return fixtureFetch(input, init);
 };
 '''
