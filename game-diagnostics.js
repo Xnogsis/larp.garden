@@ -9,10 +9,12 @@ const debugText = document.createElement("pre");
 let gpu;
 const gameFrame = () => document.getElementById("frame");
 const errorListeners = new Set();
+const eventListeners = new Set();
 function note(kind, msg) {
     if (debugLog.length >= 300) debugLog.shift();
     debugLog.push((performance.now() / 1000).toFixed(1).padStart(6) + "s " + kind + " " + String(msg).slice(0, 400));
     if (debugPanel.isConnected) showDebug();
+    eventListeners.forEach(callback => { try { callback({kind, message:String(msg).slice(0,2000)}); } catch (_) { /* Reporting must never interrupt a game. */ } });
     if (kind === "error" || kind === "rejection") errorListeners.forEach(callback => callback(kind, msg));
 }
 function describe(x) {
@@ -112,5 +114,11 @@ debugBtn.addEventListener("click", () => {
 document.getElementById("advanced-actions").append(debugBtn);
 
 
-return {note, onError: callback => errorListeners.add(callback)};
+return {
+    note, onError: callback => errorListeners.add(callback), onEvent: callback => eventListeners.add(callback),
+    snapshot: () => {
+        try { showDebug(); } catch (_) { /* Graphics details are optional. */ }
+        return {browser:navigator.userAgent, webgl:gpu || "not available", serviceWorker:!!navigator.serviceWorker?.controller};
+    },
+};
 })();

@@ -1,7 +1,7 @@
 // Viewer navigation, history, focus and loading recovery. No catalog fetching here.
 window.GameViewer = class GameViewer {
-    constructor({hub, title, gameUrl, note, onOpen}) {
-        Object.assign(this, {hub, title, gameUrl, note, onOpen});
+    constructor({hub, title, gameUrl, note, onOpen, onClose = () => {}}) {
+        Object.assign(this, {hub, title, gameUrl, note, onOpen, onClose});
         this.viewer = document.getElementById('viewer');
         this.options = document.getElementById('viewer-options');
         this.feedback = document.getElementById('game-feedback');
@@ -97,7 +97,7 @@ window.GameViewer = class GameViewer {
     }
     clearTimers() { this.timers.forEach(clearTimeout); this.timers = []; }
     hide() {
-        this.clearTimers(); this.active = null;
+        this.clearTimers(); this.active = null; this.onClose();
         this.viewer.classList.remove('open', 'nobar'); this.options.open = false;
         this.background.forEach(el => { el.inert = false; });
         document.body.classList.remove('playing'); document.title = "Clever";
@@ -166,7 +166,7 @@ window.GameViewer = class GameViewer {
         this.note('viewer error', message);
     }
     keydown(event) {
-        if (!this.active) return;
+        if (!this.active || document.getElementById('report-dialog')?.open) return;
         if (event.key === 'Escape') {
             event.preventDefault();
             if (this.options.open) { this.options.open = false; this.options.querySelector('summary').focus(); }

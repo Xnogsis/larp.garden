@@ -50,11 +50,14 @@ jobs:
           node --check game-viewer.js
           node --check game-library.js
           node --check game-diagnostics.js
+          node --check game-reporting.js
+          node --check game-reporting-config.js
           node --check home-discovery.js
           node --check sw.js
           python .github/scripts/source_pins.py --get Xnogsis/html
           python tests/catalogs.py
           python tests/viewer.py
+          python tests/reporting.py
           python tests/balatro.py
           python tests/ruffle.py
           python tests/tv.py

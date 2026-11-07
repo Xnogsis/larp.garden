@@ -16,9 +16,11 @@ const count = document.getElementById("count");
 const note = GameDiagnostics.note;
 const player = new GameViewer({hub: HUB, title: TITLE, gameUrl, note, onOpen: zone => {
     GameLibrary.remember(HUB, zone);
+    reporter.setGame(zone);
     const [id, label] = ESM_NOTES[zone.id] || [];
     esmNote.hidden = !id; esmNote.dataset.id = id; esmButton.textContent = label || "";
-}});
+}, onClose: () => reporter.clearGame()});
+const reporter = new GameReporter({hub:HUB, diagnostics:GameDiagnostics});
 const openZone = zone => player.open(zone);
 GameDiagnostics.onError(() => {
     if (player.active) player.fail("The game reported an error. If it stays blank, retry or use More for other launch options.");
