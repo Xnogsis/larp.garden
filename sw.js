@@ -28,6 +28,11 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
+    // Escape Road 3's framework reads a global config, but its page declares it
+    // inside an async loader. Expose the same populated object before loading Unity.
+    ["bubblfan/escape-road-3@", body => body.replace(
+        /\bvar config\s*=\s*\{/, "var config = window.config = {"
+    )],
     // Snowbattle's original host's /js/ wrappers resolve at the CDN root and 404.
     ["wnasmile/LAMAR@main/snowbattle/", body => body.replace(
         /<script\b[^>]*\ssrc=["']\/js\/(?:main|lib)\.js["'][^>]*>\s*<\/script\s*>/gi, ""

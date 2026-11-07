@@ -1,4 +1,4 @@
-// Regression cases for the upstream startup patterns in games 14, 6 and 207.
+// Regression cases for the upstream startup patterns in games 14, 6, 207 and 792.
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -49,4 +49,28 @@ test('Snowbattle removes host wrappers and retains engine/support scripts', () =
     assert.ok(fixed.includes('src="shared/lib.js"'));
     const unrelated = '<script src="/js/lib.js"></script>';
     assert.equal(worker.rewrite(unrelated), unrelated);
+});
+
+
+test('Escape Road 3 exposes its actual async loader config to the framework', async () => {
+    const body = `// bubblfan/escape-road-3@
+globalThis.done = (async () => {
+    await Promise.resolve();
+    var config = {dataUrl:'blob:merged-data', codeUrl:'blob:merged-wasm'};
+    config.gameId = 'escape-road-3';
+    config.eventLog = false;
+    return config;
+})();`;
+    const context = {};
+    context.window = context;
+    vm.createContext(context);
+    vm.runInContext(worker.rewrite(body), context);
+    const loaderConfig = await context.done;
+    // This is the framework's first global access, which previously threw.
+    vm.runInContext('config.sourceHtml = "framework metadata"; globalThis.frameworkConfig = config;', context);
+    assert.equal(context.frameworkConfig, loaderConfig);
+    assert.equal(context.frameworkConfig.dataUrl, 'blob:merged-data');
+    assert.equal(context.frameworkConfig.codeUrl, 'blob:merged-wasm');
+    assert.equal(context.frameworkConfig.gameId, 'escape-road-3');
+    assert.equal(context.frameworkConfig.eventLog, false);
 });
