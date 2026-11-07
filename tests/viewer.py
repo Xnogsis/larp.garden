@@ -18,11 +18,17 @@ try:
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(base + '/')
         expect(page).to_have_title('Clever')
-        page.keyboard.press('Tab')
-        assert page.url == base + '/'
-        assert page.locator('#fake-404').is_visible()
-        page.keyboard.press('Enter')
-        page.wait_for_url(base + '/gnmath.html')
+        # Regular keys all unlock; modifier keys and browser shortcuts do not.
+        for key in ['Shift', 'Control', 'Alt', 'Meta', 'Control+a']:
+            page.keyboard.press(key)
+            assert page.url == base + '/'
+            assert page.locator('#fake-404').is_visible()
+        for key in ['a', 'Space', 'ArrowDown', 'Tab', 'Enter']:
+            page.context.clear_cookies()
+            page.goto(base + '/')
+            expect(page.locator('#fake-404')).to_be_visible()
+            page.keyboard.press(key)
+            page.wait_for_url(base + '/gnmath.html')
         page.locator('#grid .zone').first.wait_for()
         # A new worker must control the catalog before a returning visitor plays.
         CatalogHandler.worker_revision = 2
