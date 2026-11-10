@@ -66,12 +66,12 @@ try:
             assert not any(cookie['name'] == 'access_granted' and cookie['value'] == 'tv.html' for cookie in context.cookies())
             context.add_cookies([{'name': 'access_granted', 'value': 'tv.html', 'url': origin}])
             page.goto(origin)
-            page.wait_for_url(origin + '/tv.html')
-            assert page.get_by_role('heading', name='Tv', exact=True).is_visible()
+            expect(page.locator('#fake-404')).to_be_visible()
+            assert page.url == origin + '/'
             assert not errors, errors
             context.close()
         browser.close()
-    print('Passed: direct Tv access without navigation links and saved-tab restore, external links, themes and existing layouts')
+    print('Passed: direct Tv access without navigation links, saved-page cookie cannot bypass entry, external links, themes and existing layouts')
 finally:
     server.shutdown()
     server.server_close()
