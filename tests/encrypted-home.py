@@ -1,4 +1,4 @@
-"""Exercise PageCrypt's fake 404 using a test password, never the live password."""
+"""Exercise PageCrypt's password screen using a test password, never the live password."""
 from functools import partial
 from http.server import ThreadingHTTPServer
 from threading import Thread
@@ -46,7 +46,8 @@ with TemporaryDirectory() as tmp:
             page.on('pageerror', lambda error: errors.append(str(error)))
             page.goto(base + '/')
             expect(page).to_have_title('Clever')
-            expect(page.locator('#fake-404 h1')).to_have_text('404 Not Found')
+            assert page.locator('#fake-404 h1, #fake-404 hr').count() == 0
+            expect(page.locator('body')).not_to_contain_text('nginx/1.18.0')
             expect(page.locator('#pwd')).to_be_focused()
             page.keyboard.type('a')
             assert page.url == base + '/'
@@ -76,7 +77,7 @@ with TemporaryDirectory() as tmp:
             game.frame_locator('#frame').locator('#game-control').wait_for()
             assert not errors, errors
             browser.close()
-        print('Passed: fake 404, cookie bypass prevention, wrong/correct password, reload, lock, direct Home and public Games')
+        print('Passed: password screen, cookie bypass prevention, wrong/correct password, reload, lock, direct Home and public Games')
     finally:
         server.shutdown()
         server.server_close()
