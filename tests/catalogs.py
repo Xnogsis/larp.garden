@@ -75,7 +75,9 @@ try:
             assert ' ' not in page.locator('#frame').get_attribute('src')
             assert any(c['name'] == 'access_granted' and c['value'] == 'ugs.html' for c in page.context.cookies())
             page.goto(base, wait_until='domcontentloaded')
-            page.wait_for_url(base + '/ugs.html')
+            page.frame_locator('#content-frame').locator('#grid .zone').first.wait_for()
+            assert page.url == base + '/'
+            assert page.frame_locator('#content-frame').locator('body').evaluate('() => location.pathname') == '/ugs.html'
             page.goto(base + '/gnmath.html', wait_until='domcontentloaded')
             page.wait_for_function("document.querySelectorAll('#grid .zone').length > 0")
             assert page.locator('html').evaluate("el => el.classList.contains('dark')")

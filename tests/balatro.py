@@ -62,8 +62,9 @@ try:
         }''')
         page.goto(origin + '/index.html')
         # Returning to the site restores Games and keeps saved data.
-        page.wait_for_url(origin + '/gnmath.html')
-        hub = page
+        hub = page.frame_locator('#content-frame')
+        hub.locator('#grid .zone').first.wait_for()
+        assert page.url == origin + '/index.html'
         hub.get_by_role('searchbox').fill('Balatro')
         hub.locator('#grid .zone').filter(has_text='Balatro').click()
         hub.frame_locator('#frame').locator('#canvas').wait_for()

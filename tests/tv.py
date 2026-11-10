@@ -66,7 +66,8 @@ try:
             assert not any(cookie['name'] == 'access_granted' and cookie['value'] == 'tv.html' for cookie in context.cookies())
             context.add_cookies([{'name': 'access_granted', 'value': 'tv.html', 'url': origin}])
             page.goto(origin)
-            page.wait_for_url(origin + '/gnmath.html')
+            page.frame_locator('#content-frame').locator('#grid .zone').first.wait_for()
+            assert page.url == origin + '/'
             assert not errors, errors
             context.close()
         browser.close()

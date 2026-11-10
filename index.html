@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clever</title>
-    <script>
-        const saved = document.cookie.split(';').find(item => item.trim().startsWith('access_granted='))?.split('=')[1]?.trim();
-        location.replace(['gnmath.html', 'ugs.html'].includes(saved) ? saved : 'gnmath.html');
-    </script>
+    <style>
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+        #content-frame { display: block; width: 100%; height: 100%; border: 0; }
+    </style>
 </head>
 <body>
-    <a href="gnmath.html">Open Games</a>
+    <iframe id="content-frame" title="larp.mom" allow="fullscreen; autoplay; gamepad; clipboard-write" allowfullscreen></iframe>
+    <script>
+        const saved = document.cookie.split(';').find(item => item.trim().startsWith('access_granted='))?.split('=')[1]?.trim();
+        document.getElementById('content-frame').src = ['gnmath.html', 'ugs.html'].includes(saved) ? saved : 'gnmath.html';
+    </script>
+    <noscript><a href="gnmath.html">Open Games</a></noscript>
 </body>
 </html>
