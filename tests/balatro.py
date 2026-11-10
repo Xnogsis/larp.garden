@@ -61,8 +61,9 @@ try:
             await new Promise((resolve, reject) => FS.syncfs(false, error => error ? reject(error) : resolve()));
         }''')
         page.goto(origin + '/index.html')
-        # The root page restores Games; reopening Balatro keeps its saved data.
-        page.wait_for_url(origin + '/gnmath.html')
+        # The password screen blocks saved-page entry; public Games and saved data still work.
+        page.locator('#fake-404').wait_for()
+        page.goto(origin + '/gnmath.html')
         hub = page
         hub.get_by_role('searchbox').fill('Balatro')
         hub.locator('#grid .zone').filter(has_text='Balatro').click()
@@ -72,7 +73,7 @@ try:
         assert game.evaluate("FS.readFile('/home/web_user/love/larp-save-check', {encoding:'utf8'})") == 'persisted'
         assert not errors and not failures, (errors, failures)
         browser.close()
-    print('Passed: Balatro catalog card, active-worker loading, WASM/game data, no external requests, saved-page restore, persistent filesystem')
+    print('Passed: Balatro catalog card, active-worker loading, WASM/game data, no external requests, password-screen return, persistent filesystem')
 finally:
     server.shutdown()
     server.server_close()
