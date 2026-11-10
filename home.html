@@ -45,6 +45,12 @@
             <section class="updates" aria-labelledby="updates-title">
                 <h2 id="updates-title">Updates</h2>
                 <article>
+                    <time datetime="2026-11-09">November 9, 2026</time>
+                    <ul>
+                        <li>The homepage now unlocks with a password on the 404 page.</li>
+                    </ul>
+                </article>
+                <article>
                     <time datetime="2026-11-07">November 7, 2026</time>
                     <ul>
                         <li>Fixed more game startup failures and reduced automatic reports from optional ad and analytics scripts.</li>
@@ -234,6 +240,7 @@
 
         document.getElementById('forget').addEventListener('click', () => {
             document.cookie = "access_granted=; max-age=0; path=/";
+            sessionStorage.removeItem('k');
             document.getElementById('forget-note').textContent = "Done. Reload and you'll get the 404 page.";
         });
     </script>

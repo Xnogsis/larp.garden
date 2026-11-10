@@ -23,7 +23,12 @@
             margin-block-end: 0.67em;
             font-weight: bold;
         }
-
+        .hidden { display: none !important; }
+        .entry { margin: 24px auto; max-width: 260px; text-align: center; }
+        .flex { display: flex; justify-content: center; }
+        .red { color: #a00; }
+        #pwd { box-sizing: border-box; width: 100%; padding: 6px; }
+        button { margin-top: 8px; padding: 4px 12px; }
     </style>
 </head>
 <body>
@@ -31,6 +36,14 @@
     <div id="fake-404">
         <center><h1>404 Not Found</h1></center>
         <hr><center>nginx/1.18.0</center>
+        <div class="entry">
+            <header class="hidden"><p id="msg" role="status"></p></header>
+            <form class="hidden">
+                <input type="password" id="pwd" name="password" aria-label="Password" autocomplete="current-password" placeholder="Password" required>
+                <button type="submit">Enter</button>
+            </form>
+            <div id="load" class="hidden"><p>Loading...</p></div>
+        </div>
     </div>
 
 
@@ -40,31 +53,9 @@
             location.replace("https://" + location.host + location.pathname + location.search + location.hash);
         }
 
-        const validTargets = ["antimatter.html", "gnmath.html", "ugs.html", "isaac.html", "balatro/index.html", "home.html", "tv.html"];
-
-        function unlockSite(targetUrl) {
-            document.cookie = "access_granted=" + targetUrl + "; max-age=" + (60 * 60 * 24 * 30) + "; path=/";
-            location.replace(targetUrl);
-        }
-
         if (location.search || location.hash) history.replaceState(null, "", location.pathname);
-
-        const cookie = document.cookie.split(';').find((item) => item.trim().startsWith('access_granted='));
-        if (cookie) {
-            let savedUrl = cookie.split('=')[1].trim();
-            if (savedUrl === "help.html" || savedUrl === "home.html") savedUrl = "gnmath.html";
-            if (validTargets.includes(savedUrl)) {
-                unlockSite(savedUrl);
-            } else {
-                document.cookie = "access_granted=; max-age=0; path=/";
-            }
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || ["Shift", "Control", "Alt", "Meta"].includes(e.key)) return;
-            e.preventDefault();
-            unlockSite("gnmath.html");
-        });
     </script>
+    <!-- PAGECRYPT_SCRIPT -->
+    <!-- PAGECRYPT_PAYLOAD -->
 </body>
 </html>

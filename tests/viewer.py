@@ -16,25 +16,8 @@ try:
         page = browser.new_page(viewport={'width': 1280, 'height': 850})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        page.goto(base + '/')
-        expect(page).to_have_title('Clever')
-        # Regular keys all unlock; modifier keys and browser shortcuts do not.
-        for key in ['Shift', 'Control', 'Alt', 'Meta', 'Control+a']:
-            page.keyboard.press(key)
-            assert page.url == base + '/'
-            assert page.locator('#fake-404').is_visible()
-        for key in ['a', 'Space', 'ArrowDown', 'Tab', 'Enter']:
-            # Fresh contexts prevent a previous catalog's late saved-tab cookie
-            # from racing the next visit to the entry page.
-            entry_context = browser.new_context()
-            entry = entry_context.new_page()
-            entry.goto(base + '/')
-            expect(entry.locator('#fake-404')).to_be_visible()
-            entry.keyboard.press(key)
-            entry.wait_for_url(base + '/gnmath.html')
-            entry_context.close()
-        page.keyboard.press('Enter')
-        page.wait_for_url(base + '/gnmath.html')
+        # Password entry is covered against the published artifact in encrypted-home.py.
+        page.goto(base + '/gnmath.html')
         page.locator('#grid .zone').first.wait_for()
         # A new worker must control the catalog before a returning visitor plays.
         CatalogHandler.worker_revision = 2
@@ -155,7 +138,7 @@ try:
         expect(broken.locator('#catalog-retry')).to_be_visible(timeout=20000)
         assert not errors, errors
         browser.close()
-    print('Passed: desktop entry, service-worker upgrades, canonical URLs, Back/Forward, shared links, focus/Escape, empty states, source retry, pinned refs, Home discovery and catalog failure')
+    print('Passed: service-worker upgrades, canonical URLs, Back/Forward, shared links, focus/Escape, empty states, source retry, pinned refs, Home discovery and catalog failure')
 finally:
     server.shutdown()
     server.server_close()
