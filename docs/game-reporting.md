@@ -13,7 +13,7 @@ Reports contain the game ID/name, a canonical game link, browser/graphics inform
 - Reports: `POST /v1/report`
 - Runtime secret name: `DISCORD_WEBHOOK_URL`
 
-The Discord webhook is only stored in Sites runtime secrets. It must never be placed in this repository, browser configuration, error logs, CI variables printed to logs, or deployment archives. The frontend exposes only the relay address. The service permits the `https://larp.surf` browser origin, uses short-lived signed sessions bound to the connecting address, validates bounded payloads, prevents Discord mention pings, coalesces duplicates and honors delivery rate limiting. Address identifiers are HMAC-derived rather than sent to Discord.
+The Discord webhook is only stored in Sites runtime secrets. It must never be placed in this repository, browser configuration, error logs, CI variables printed to logs, or deployment archives. The frontend exposes only the relay address. The service permits the `https://larp.mom` browser origin, uses short-lived signed sessions bound to the connecting address, validates bounded payloads, prevents Discord mention pings, coalesces duplicates and honors delivery rate limiting. Address identifiers are HMAC-derived rather than sent to Discord.
 
 Rate and duplicate counters use atomic D1 database statements shared across workers and regions. Only HMAC-derived identifiers, counts and expiry times are stored; expired entries are pruned in bounded batches. These limits are abuse controls for an anonymous reporting service, not authenticated visitor identities. Actual report content is delivered to Discord and is not stored by this relay.
 

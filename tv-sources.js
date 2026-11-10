@@ -1,6 +1,6 @@
 // Routes checked against provider documentation linked in docs/tv-sources.md.
 const TV_SOURCE_GROUPS = [
-    {name: '0VIDADS', website: 'https://0vidads.top/', movie: '/embed/movie/{id}?branding=larp.surf&loading=2&back=false', tv: '/embed/tv/{id}/{season}/{episode}?branding=larp.surf&loading=2&back=false', mirrors: ['https://vidstuck.cc/', 'https://zxcstream.cc/']},
+    {name: '0VIDADS', website: 'https://0vidads.top/', movie: '/embed/movie/{id}?branding=larp.mom&loading=2&back=false', tv: '/embed/tv/{id}/{season}/{episode}?branding=larp.mom&loading=2&back=false', mirrors: ['https://vidstuck.cc/', 'https://zxcstream.cc/']},
     {name: '2embed', website: 'https://www.2embed.cc/', movie: '/embed/{id}', tv: '/embedtv/{id}&s={season}&e={episode}', mirrors: ['https://2embed.skin/']},
     {name: '2embed.stream', website: 'https://2embed.stream/', movie: '/embed/movie/{id}', tv: '/embed/tv/{id}/{season}/{episode}'},
     {name: 'animeTVplus Embed', website: 'https://embed.animetvplus.site/', anime: '/{id}/{episode}', idType: 'MyAnimeList'},

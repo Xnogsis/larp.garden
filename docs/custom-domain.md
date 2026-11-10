@@ -1,4 +1,4 @@
-# Custom domain: larp.surf
+# Custom domain: larp.mom
 
 The site uses GitHub Pages with a custom Actions deployment. The GitHub repository
 is still `Xnogsis/larp.garden`; repository URLs and CDN references to that repository
@@ -6,7 +6,7 @@ must keep their existing name.
 
 ## DNS
 
-At the DNS provider for `larp.surf`, configure:
+At the DNS provider for `larp.mom`, configure:
 
 | Type | Name | Value |
 | --- | --- | --- |
@@ -23,12 +23,12 @@ names. The apex does not need an AAAA or CNAME record for this setup.
 ## GitHub Pages and HTTPS
 
 After DNS resolves correctly, set the repository's **Settings → Pages → Custom
-domain** to `larp.surf`. Wait for GitHub's certificate to cover `larp.surf` and
-`www.larp.surf`, then ensure **Enforce HTTPS** is enabled. The repository's `CNAME`
+domain** to `larp.mom`. Wait for GitHub's certificate to cover `larp.mom` and
+`www.larp.mom`, then ensure **Enforce HTTPS** is enabled. The repository's `CNAME`
 file records the intended domain; with this Actions deployment it does not replace
 the Pages custom-domain setting.
 
-Update the repository's website URL to `https://larp.surf/`. No repository rename
+Update the repository's website URL to `https://larp.mom/`. No repository rename
 is needed. The deployment workflow already takes its verification URLs from the
 Pages deployment output, so its asset checks follow the configured domain.
 

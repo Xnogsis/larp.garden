@@ -1,6 +1,6 @@
 # Catalog game hosting and release checks
 
-The site is static GitHub Pages. Catalogs, viewer, service worker and many games currently share `larp.surf`. Game code has access to origin storage and surrounding pages. The disguise and about:blank launcher do not change that boundary.
+The site is static GitHub Pages. Catalogs, viewer, service worker and many games currently share `larp.mom`. Game code has access to origin storage and surrounding pages. The disguise and about:blank launcher do not change that boundary.
 
 ## Reproducible catalog sources
 

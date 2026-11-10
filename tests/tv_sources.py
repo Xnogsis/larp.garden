@@ -20,9 +20,9 @@ embedded = 'vidstuck.cc zxcstream.cc 2embed.stream nontongo.win vidsrc.sh vidsrc
 examples = {host: (f'https://{host}/movie/550', f'https://{host}/tv/1399/2/3') for host in plain}
 examples.update({host: (f'https://{host}/embed/movie/550', f'https://{host}/embed/tv/1399/2/3') for host in embedded})
 for host in ('vidstuck.cc', 'zxcstream.cc'):
-    examples[host] = tuple(url + '?branding=larp.surf&loading=2&back=false' for url in examples[host])
+    examples[host] = tuple(url + '?branding=larp.mom&loading=2&back=false' for url in examples[host])
 examples.update({
-    '0vidads.top': ('https://0vidads.top/embed/movie/550?branding=larp.surf&loading=2&back=false', 'https://0vidads.top/embed/tv/1399/2/3?branding=larp.surf&loading=2&back=false'),
+    '0vidads.top': ('https://0vidads.top/embed/movie/550?branding=larp.mom&loading=2&back=false', 'https://0vidads.top/embed/tv/1399/2/3?branding=larp.mom&loading=2&back=false'),
     'www.2embed.cc': ('https://www.2embed.cc/embed/550', 'https://www.2embed.cc/embedtv/1399&s=2&e=3'),
     '2embed.skin': ('https://2embed.skin/embed/550', 'https://2embed.skin/embedtv/1399&s=2&e=3'),
     'embed.atlantic.st': ('https://atlantic.st/embed/movie/550', 'https://atlantic.st/embed/tv/1399/2/3'),

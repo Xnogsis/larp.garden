@@ -28,7 +28,7 @@ window.GameReporter = class GameReporter {
         const notice = document.createElement('p');
         notice.textContent = config?.enabled
             ? 'Reports send game errors and browser information to the site owner’s Discord. Cookies and saved games are not included.'
-            : 'Reporting is available on larp.surf.';
+            : 'Reporting is available on larp.mom.';
         actions.append(this.button, label, notice);
         this.createDialog();
         diagnostics.onEvent(event => this.event(event));
@@ -141,7 +141,7 @@ window.GameReporter = class GameReporter {
         finally { clearTimeout(timer); }
     }
     async send(payload, refresh = false) {
-        if (!this.config?.enabled) throw new Error('Reporting is available on larp.surf.');
+        if (!this.config?.enabled) throw new Error('Reporting is available on larp.mom.');
         try {
             if (!this.session || this.session.expiresAt < Date.now() + 30000) {
                 const session = await this.request('/v1/session');

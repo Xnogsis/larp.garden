@@ -48,7 +48,7 @@ try:
             page.locator('#tmdb-id').fill('94605')
             page.locator('#tv-type').select_option('tv')
             page.locator('#tv-form button').click()
-            expected = 'https://0vidads.top/embed/tv/94605/1/1?branding=larp.surf&loading=2&back=false'
+            expected = 'https://0vidads.top/embed/tv/94605/1/1?branding=larp.mom&loading=2&back=false'
             assert page.locator('#tv-frame').get_attribute('src') == expected
             assert page.locator('#tv-external').get_attribute('href') == expected
             assert page.locator('#tv-player').is_visible()
@@ -61,7 +61,7 @@ try:
             page.locator('#tmdb-id').fill('1339713')
             assert page.locator('#season').is_disabled()
             page.locator('#tv-form button').click()
-            expect(page.locator('#tv-frame')).to_have_attribute('src', 'https://0vidads.top/embed/movie/1339713?branding=larp.surf&loading=2&back=false')
+            expect(page.locator('#tv-frame')).to_have_attribute('src', 'https://0vidads.top/embed/movie/1339713?branding=larp.mom&loading=2&back=false')
             page.locator('#tv-stop').click()
             assert not any(cookie['name'] == 'access_granted' and cookie['value'] == 'tv.html' for cookie in context.cookies())
             context.add_cookies([{'name': 'access_granted', 'value': 'tv.html', 'url': origin}])

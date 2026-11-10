@@ -4,8 +4,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const listeners = {};
-const worker = {Response, Headers, URL, AbortController, setTimeout, clearTimeout, self:{location:{origin:'https://larp.surf'}, addEventListener(name,callback){listeners[name]=callback;}}, importScripts(){}};
+const worker = {Response, Headers, URL, AbortController, setTimeout, clearTimeout, self:{location:{origin:'https://larp.mom'}, addEventListener(name,callback){listeners[name]=callback;}}, importScripts(){}};
 vm.runInNewContext(fs.readFileSync('sw.js', 'utf8') + '\nglobalThis.rewrite = body => {for(const [marker,fix] of HTML_FIXES) if(body.includes(marker)) body=fix(body);return body;};', worker);
+
+test('reporting recognizes the new production domain', () => {
+    for (const [hostname, enabled] of [['larp.mom',true],['larp.surf',false],['localhost',false]]) {
+        const context={window:{},location:{hostname}};
+        vm.runInNewContext(fs.readFileSync('game-reporting-config.js','utf8'),context);
+        assert.equal(context.window.GAME_REPORTING.enabled,enabled);
+    }
+});
 
 test('Bridge Race delivers save data after Unity resolves its instance', async () => {
     const body = `// bridge-race-save
@@ -135,7 +143,7 @@ test('blocked Githack bases use the supported CDN and Monster Tracks gets its mi
 
 test('Brotato queries its own service-worker registration while preserving explicit URL checks', async () => {
     const seen=[];
-    const context={location:{href:'https://larp.surf/hub/gnmath/723-fix.html'},navigator:{serviceWorker:{getRegistration(url){seen.push(url);return Promise.resolve();}}}};
+    const context={location:{href:'https://larp.mom/hub/gnmath/723-fix.html'},navigator:{serviceWorker:{getRegistration(url){seen.push(url);return Promise.resolve();}}}};
     vm.runInNewContext(worker.rewrite('// Stinkalistic/UGS@main/MISC/brotato/\nconst GODOT_CONFIG = {};'),context);
     await context.navigator.serviceWorker.getRegistration();
     await context.navigator.serviceWorker.getRegistration('https://example.test/explicit');
