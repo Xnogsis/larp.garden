@@ -4,50 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clever</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: white;
-            color: black;
-            font-family: "Times New Roman", Times, serif;
-        }
-
-        #fake-404 {
-            padding: 8px;
-        }
-
-        .hidden { display: none !important; }
-        .entry { margin: 24px auto; max-width: 260px; text-align: center; }
-        .flex { display: flex; justify-content: center; }
-        .red { color: #a00; }
-        #pwd { box-sizing: border-box; width: 100%; padding: 6px; }
-        button { margin-top: 8px; padding: 4px 12px; }
-    </style>
+    <script>
+        const saved = document.cookie.split(';').find(item => item.trim().startsWith('access_granted='))?.split('=')[1]?.trim();
+        location.replace(['gnmath.html', 'ugs.html'].includes(saved) ? saved : 'gnmath.html');
+    </script>
 </head>
 <body>
-
-    <div id="fake-404">
-        <div class="entry">
-            <header class="hidden"><p id="msg" role="status"></p></header>
-            <form class="hidden">
-                <input type="password" id="pwd" name="password" aria-label="Password" autocomplete="current-password" placeholder="Password" required>
-                <button type="submit">Enter</button>
-            </form>
-            <div id="load" class="hidden"><p>Loading...</p></div>
-        </div>
-    </div>
-
-
-    <script>
-        // The hub loaders need service workers, which only exist on https.
-        if (location.protocol === "http:" && location.hostname !== "localhost" && location.hostname !== "127.0.0.1") {
-            location.replace("https://" + location.host + location.pathname + location.search + location.hash);
-        }
-
-        if (location.search || location.hash) history.replaceState(null, "", location.pathname);
-    </script>
-    <!-- PAGECRYPT_SCRIPT -->
-    <!-- PAGECRYPT_PAYLOAD -->
+    <a href="gnmath.html">Open Games</a>
 </body>
 </html>

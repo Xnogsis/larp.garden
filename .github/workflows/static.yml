@@ -40,8 +40,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install homepage encryption dependency
-        run: npm ci --ignore-scripts
       - name: Install browser checks
         run: |
           python -m pip install pillow==11.3.0 playwright==1.56.0
@@ -64,8 +62,7 @@ jobs:
           python tests/balatro.py
           python tests/ruffle.py
           python tests/tv.py
-          node .github/scripts/encrypt-home.mjs --check
-          python tests/encrypted-home.py
+          python tests/entry.py
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Cache Celeste assets
@@ -89,10 +86,6 @@ jobs:
           key: buckshot-assets-b3042ae7a56b2ede39ea4b4371b1d0ab3af8828a-gzip-v1
       - name: Prepare Buckshot Roulette assets
         run: python3 .github/scripts/prepare-buckshot.py
-      - name: Protect both homepage URLs
-        run: |
-          cp .github/encrypted-home.html index.html
-          cp .github/encrypted-home.html home.html
       - name: Check published site size
         run: |
           site_bytes=$(du -sb --exclude=.git . | cut -f1)

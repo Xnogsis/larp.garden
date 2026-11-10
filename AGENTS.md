@@ -16,7 +16,6 @@ Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/age
 
 For every user-facing feature or fix, update the Updates section in `home.html` in the same change. Add a short, plain-language note under the newest date first; group notes from the same day. Use dates in America/Los_Angeles. Record completed changes, not plans, internal maintenance, or routine automated catalog/comic refreshes. Preserve earlier entries.
 
-`home.html` is the editable homepage source. After changing it or the `index.html` password-screen template, run `npm ci --ignore-scripts`, then `PAGECRYPT_PASSWORD` supplied through the environment with `node .github/scripts/encrypt-home.mjs`. Commit the generated `.github/encrypted-home.html` too. Never store the password in source. The Pages workflow replaces both public homepage URLs with this encrypted artifact; see `docs/homepage-encryption.md`.
 
 ## Local Celeste assets
 

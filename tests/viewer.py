@@ -16,7 +16,7 @@ try:
         page = browser.new_page(viewport={'width': 1280, 'height': 850})
         errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        # Password entry is covered against the published artifact in encrypted-home.py.
+        # Automatic entry and saved catalogs are covered in entry.py.
         page.goto(base + '/gnmath.html')
         page.locator('#grid .zone').first.wait_for()
         # A new worker must control the catalog before a returning visitor plays.

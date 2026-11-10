@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clever</title>
-    <script>
-        if (location.pathname === '/' || location.pathname.endsWith('/index.html')) location.replace('gnmath.html');
-    </script>
     <script>if (localStorage.theme !== "light") document.documentElement.classList.add("dark");</script>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -50,6 +47,7 @@
                 <article>
                     <time datetime="2026-11-09">November 9, 2026</time>
                     <ul>
+                        <li>Removed the password lock. The site opens Games or your last-used game library automatically.</li>
                         <li>Unlocking the site now opens Games by default.</li>
                         <li>Updated games and error reporting for larp.mom.</li>
                         <li>Incorrect passwords now show “nope”.</li>
@@ -247,8 +245,7 @@
 
         document.getElementById('forget').addEventListener('click', () => {
             document.cookie = "access_granted=; max-age=0; path=/";
-            sessionStorage.removeItem('k');
-            document.getElementById('forget-note').textContent = "Done. Reload and you'll get the 404 page.";
+            document.getElementById('forget-note').textContent = "Saved page cleared. The next visit will open Games.";
         });
     </script>
 </body>

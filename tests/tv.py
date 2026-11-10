@@ -66,12 +66,11 @@ try:
             assert not any(cookie['name'] == 'access_granted' and cookie['value'] == 'tv.html' for cookie in context.cookies())
             context.add_cookies([{'name': 'access_granted', 'value': 'tv.html', 'url': origin}])
             page.goto(origin)
-            expect(page.locator('#fake-404')).to_be_visible()
-            assert page.url == origin + '/'
+            page.wait_for_url(origin + '/gnmath.html')
             assert not errors, errors
             context.close()
         browser.close()
-    print('Passed: direct Tv access without navigation links, saved-page cookie cannot bypass entry, external links, themes and existing layouts')
+    print('Passed: direct Tv access without navigation links, unknown saved page defaults to Games, external links, themes and existing layouts')
 finally:
     server.shutdown()
     server.server_close()

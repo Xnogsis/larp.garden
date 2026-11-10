@@ -75,8 +75,7 @@ try:
             assert ' ' not in page.locator('#frame').get_attribute('src')
             assert any(c['name'] == 'access_granted' and c['value'] == 'ugs.html' for c in page.context.cookies())
             page.goto(base, wait_until='domcontentloaded')
-            expect(page.locator('#fake-404')).to_be_visible()
-            assert page.url == base + '/'
+            page.wait_for_url(base + '/ugs.html')
             page.goto(base + '/gnmath.html', wait_until='domcontentloaded')
             page.wait_for_function("document.querySelectorAll('#grid .zone').length > 0")
             assert page.locator('html').evaluate("el => el.classList.contains('dark')")
@@ -132,7 +131,7 @@ try:
         expect(loading_page.get_by_role('searchbox')).to_have_value('Biotomata')
         loading_context.close()
         browser.close()
-    print('Passed: UGS navigation, full catalog, search, viewer, game links, saved-page cookie cannot bypass entry, mobile layout, gn-math regression')
+    print('Passed: UGS navigation, full catalog, search, viewer, game links, saved catalog restore, mobile layout, gn-math regression')
 finally:
     server.shutdown()
     server.server_close()
