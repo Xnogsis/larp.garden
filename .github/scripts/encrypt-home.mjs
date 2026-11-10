@@ -18,7 +18,7 @@ if (process.argv.includes('--check')) {
     const script = encrypted.match(/<script\b[^>]*>[\s\S]*?<\/script>/)?.[0];
     const payload = encrypted.match(/<pre\b[^>]*data-i=[^>]*>[\s\S]*?<\/pre>/)?.[0];
     if (!script || !payload) throw new Error('Unrecognized PageCrypt output.');
-    const page = template.replace('<!-- PAGECRYPT_SCRIPT -->', () => script)
+    const page = template.replace('<!-- PAGECRYPT_SCRIPT -->', () => script.replace('Wrong password.', 'nope'))
         .replace('<!-- PAGECRYPT_PAYLOAD -->', () => payload);
     await writeFile(output, stamp + '\n' + page);
     console.log('Encrypted homepage generated; password was not saved.');

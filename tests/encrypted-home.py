@@ -54,7 +54,7 @@ with TemporaryDirectory() as tmp:
             assert page.locator('main.home').count() == 0
             page.locator('#pwd').fill('wrong-password')
             page.locator('#pwd').press('Enter')
-            expect(page.locator('#msg')).to_have_text('Wrong password.')
+            expect(page.locator('#msg')).to_have_text('nope')
             expect(page.locator('#pwd')).to_be_focused()
             page.locator('#pwd').fill(password)
             page.locator('#pwd').press('Enter')
