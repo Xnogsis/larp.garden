@@ -46,15 +46,31 @@ try:
                 'https://www.googletagmanager.com/gtag/js?id=test',
                 'https://pagead2.googlesyndication.com/pagead/managed/js/adsense/m202502250101/show_ads_impl_fy2021.js',
                 'https://localstorage.goguardian/xdLocalStorage.js',
+                'https://larp.mom/hub/gnmath/embeds/moto_x3m/null.php?https://imasdk.googleapis.com/js/sdkloader/ima3.js',
+                'https://cdn.jsdelivr.net/gh/bubbls/escape-road@45b2d69c626dc365753f6922d2c48c4075683ef5/drive.google.com/escape%20road/',
+                'https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets/roof%20snipe%202/',
+                'https://cdn.jsdelivr.net/gh/yrgen73/Jtrigger@858a22f47db1fabd07d6ac0707df0173b92a9052/js/adsdk.js',
+                'https://cdn.jsdelivr.net/gh/r3tq6l1/gmsdk@main/sdk.js',
+                'https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/cookieclicker/showads.js',
+                'https://cdn.jsdelivr.net/gh/bubbls/gunspin/patch/js/gd-sdk.js',
+                'https://ssl.minijuegosgratis.com/lechuck/js/unity/loader.js',
+                'https://server.cpmstar.com/cached/zonefiles/204_48306_gameapi.js',
+                'https://api.adinplay.com/libs/aiptag/assets/adsbygoogle.js',
+                'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
                 'https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/ragdoll-hit/null.html?https://imasdk.googleapis.com/js/sdkloader/ima3.js']) {
                 const script=document.createElement('script'); script.src=src;
                 const event=new Event('error'); Object.defineProperty(event,'target',{value:script});
                 window.dispatchEvent(event);
             }
         }""")
+        game.locator('body').evaluate("""() => {
+            Promise.reject(new DOMException("play() failed because the user didn't interact with the document first.", 'NotAllowedError'));
+            Promise.reject(new DOMException('A user gesture is required to request Pointer Lock.', 'NotAllowedError'));
+        }""")
         page.wait_for_timeout(1400)
         assert len(reports) == 0, reports
-        assert page.evaluate("diagnosticEvents.filter(event=>event.kind==='optional script').length") == 9
+        assert page.evaluate("diagnosticEvents.filter(event=>event.kind==='optional script').length") == 20
+        assert page.evaluate("diagnosticEvents.filter(event=>event.kind==='interaction needed').length") == 2
         # Use an actual Error created in the game realm: instanceof in the parent fails.
         game.locator('body').evaluate("() => { Promise.reject(new Error('Crash at https://assets.example/game.js?token=private-value#private-fragment')); }")
         page.wait_for_timeout(1800)
@@ -70,6 +86,8 @@ try:
         assert len(reports) == 1
         page.locator('#viewer-options summary').click()
         page.locator('#auto-reports').uncheck()
+        game.locator('body').evaluate("() => { Promise.reject(new DOMException('The root document is not valid for pointer lock.', 'WrongDocumentError')); }")
+        page.wait_for_function("diagnosticEvents.some(event=>event.kind==='rejection' && event.message.includes('WrongDocumentError'))")
         page.evaluate("GameDiagnostics.note('error','Different error while opted out')")
         page.wait_for_timeout(1500)
         assert len(reports) == 1

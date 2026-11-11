@@ -18,6 +18,7 @@ const BURRITO_LOADER_RE = /^https:\/\/(?:(?:cdn|gcore|fastly|testingcf)\.jsdeliv
 // repo (asking the others first costs a slow esm.sh 404 per file). Keyed by catalog id,
 // since the daily catalog refresh can move a game to "<id>-fix.html".
 const COPIES = {
+    "276": { repo: "Xnogsis/ugs-singlefile", dir: "UGS-Files/", page: "cldriftboss.html" },
     // Standalone repositories can mount at a hub folder without an upstream catalog id.
     "prestige-tree": { repo: "Xnogsis/Prestige-Tree", dir: "prestige-tree/", stripDir: true },
     "biotomata": { repo: "Xnogsis/Biotomata-Game", dir: "biotomata/", stripDir: true },
@@ -31,8 +32,25 @@ const COPIES = {
 
 // Per-game rewrites of hub HTML pages: [text that identifies the game's page, rewrite].
 const HTML_FIXES = [
-    // The mod attaches canvas listeners before the canvas exists and fetches translations from a retired sheet.
-    ["Replku/Ovo@", body => body.replace('src="unlockalllevels.js"', `defer src="unlockalllevels.js" onload="getTranslations=async()=>{const json=await(await fetch('languages.json')).json();c2_callFunction('Language > LoadLanguageFile',[JSON.stringify(json)]);globalThis.languageJSON=json;return json}"`)],
+    // The Google gadget relay is absent here; the standalone game does not need it.
+    ["bossgame.js", body => body.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi,
+        (script, code) => code.includes('gadgets.rpc.setRelayUrl') ? '' : script)],
+    // The game's one-line export accidentally comments out the end of this handler.
+    ["G-MENBM6GSNY", body => body.replace('// space and arrow keys ', '/* space and arrow keys */ ')],
+    ["google-class/coreball/", body => body.replace('window.parent.maeExportApis_();', '')],
+    // There is no game state to save before Unity has finished starting.
+    ["ColorMatch.data.unityweb", deferUnityMessages],
+    ["yrgen73/draw-cl", body => body.replace('onload="sdk.showBanner();"', '')],
+    // TileTopia must not unregister the hub worker or delete other games' caches.
+    ["youtube-playables@main/tiletopia/", body => body.replace(
+        /<script\b[^>]*>([\s\S]*?)<\/script>/gi,
+        (script, code) => code.includes('navigator.serviceWorker.getRegistration("../..")') ? '' : script
+    ).replace('navigator.serviceWorker.register("ServiceWorker.js");', '')],
+    ["genizy/cc3d-mobile", body => body.replace('"serviceWorker":"CrazyCattle3D.service.worker.js"', '"serviceWorker":""')],
+    ["games/evowars/", body => body.replace(/<head[^>]*>/i, tag => tag + cdnWorkerBridge())],
+    ["LAMAR@main/protektor/", body => body.replace(/<head[^>]*>/i, tag => tag + cdnWorkerBridge())],
+    // The mod attaches canvas listeners before the canvas exists.
+    ["Replku/Ovo@", body => body.replace('src="unlockalllevels.js"', 'defer src="unlockalllevels.js"')],
     // This host bridge only calls a Google-host function; local assets need the game's root as base.
     ["435345345346@", body => body.replace(
         /<script\b[^>]*src="(https:\/\/cdn\.jsdelivr\.net\/gh\/234sd4w5w45wers5tr-645758574456456\/435345345346@[^/]+\/)js\/window\.js"[^>]*>\s*<\/script>/,
@@ -46,7 +64,7 @@ const HTML_FIXES = [
         '<div id="canvas_border">', '<div id="gradient" aria-hidden="true" style="display:none"></div><div id="canvas_border">'
     )],
     // Godot's no-argument lookup resolves against the CDN base instead of this document.
-    ["Stinkalistic/UGS@main/MISC/brotato/", body => body.replace(
+    ["const GODOT_CONFIG =", body => body.replace(
         'const GODOT_CONFIG =',
         'const getRegistration = navigator.serviceWorker?.getRegistration.bind(navigator.serviceWorker); if(getRegistration) navigator.serviceWorker.getRegistration = (url = location.href) => getRegistration(url); const GODOT_CONFIG ='
     )],
@@ -59,8 +77,8 @@ const HTML_FIXES = [
     ["bubblfan/escape-road-3@", body => body.replace(
         /\bvar config\s*=\s*\{/, "var config = window.config = {"
     )],
-    // Snowbattle's original host's /js/ wrappers resolve at the CDN root and 404.
-    ["wnasmile/LAMAR@main/snowbattle/", body => body.replace(
+    // These ports retain their original host's ad wrappers, which 404 at the CDN root.
+    ["wnasmile/LAMAR@main/", body => body.replace(
         /<script\b[^>]*\ssrc=["']\/js\/(?:main|lib)\.js["'][^>]*>\s*<\/script\s*>/gi, ""
     )],
     // A game cannot register an offline-cache worker from another origin. The hub
@@ -70,12 +88,7 @@ const HTML_FIXES = [
     )],
     // Bridge Race's save-data promise resolves before createUnityInstance does.
     // Replay its early SendMessage calls once Unity has returned the real instance.
-    ["bridge-race-save", body => body.replace(
-        "var unityGameInstance = null;",
-        "var pendingUnityMessages = []; var unityGameInstance = {SendMessage: (...args) => pendingUnityMessages.push(args)};"
-    ).replace("unityGameInstance = unityInstance;",
-        "unityGameInstance = unityInstance; for (const args of pendingUnityMessages.splice(0)) unityInstance.SendMessage(...args);"
-    )],
+    ["bridge-race-save", deferUnityMessages],
     // Let Moto X3M 3's pinned, CORS-enabled scripts report useful error details.
     ["58d9d25357dc8597da2691dc003f35c4ca25ac65/moto3.js", (body) => body.replaceAll(
         '<script type="text/javascript" src="https://cdn.jsdelivr.net/gh/bubbls/ruffle@58d9d25357dc8597da2691dc003f35c4ca25ac65/',
@@ -101,6 +114,13 @@ const HTML_FIXES = [
     ["cdn.jsdelivr.net/Theprocat27/", (body) => body.replace("cdn.jsdelivr.net/Theprocat27/", "cdn.jsdelivr.net/gh/Theprocat27/")],
 ];
 
+function deferUnityMessages(body) {
+    return body.replace('var unityGameInstance = null;',
+        'var pendingUnityMessages = []; var unityGameInstance = {SendMessage: (...args) => pendingUnityMessages.push(args)};'
+    ).replace('unityGameInstance = unityInstance;',
+        'unityGameInstance = unityInstance; for (const args of pendingUnityMessages.splice(0)) unityInstance.SendMessage(...args);');
+}
+
 // A few catalog entries point at renamed files ("7-f.html"); gn-math still has "<id>.html".
 const RENAMED_RE = /^(\d+)\D[^/]*\.html$/;
 
@@ -123,6 +143,24 @@ function viaRaw(href) {
     if (!match || match[1] !== "gh") return null;
     const file = /^([^/]+)\/([^/@]+)(?:@([^/]+))?\/(.+)$/.exec(match[2]);
     return file ? `https://raw.githubusercontent.com/${file[1]}/${file[2]}/${!file[3] || file[3] === "latest" ? "HEAD" : file[3]}/${file[4]}` : null;
+}
+
+// Construct's classic workers need a same-origin entry and absolute import paths.
+function cdnWorkerBridge() {
+    function install(JSDELIVR_RE, viaEsm) {
+        const NativeWorker = window.Worker;
+        window.Worker = class extends NativeWorker {
+            constructor(path, options) {
+                const url = new URL(path, document.baseURI);
+                if (url.origin !== location.origin && JSDELIVR_RE.test(url.href)) {
+                    const source = `const JSDELIVR_RE=${JSDELIVR_RE};const viaEsm=${viaEsm};const load=importScripts.bind(self);self.importScripts=(...paths)=>load(...paths.map(path=>viaEsm(new URL(path,${JSON.stringify(url.href)}).href)));importScripts(${JSON.stringify(url.href)});`;
+                    path = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
+                }
+                super(path, options);
+            }
+        };
+    }
+    return '<script>(' + install + ')(' + JSDELIVR_RE + ',' + viaEsm + ')</script>';
 }
 
 // bubbls/youtube-playables' ytgame.js is the real YouTube Playables SDK, which
@@ -401,6 +439,8 @@ self.addEventListener("fetch", (event) => {
 
     // Game scripts request jsDelivr files themselves; those go through esm.sh too.
     if (url.origin !== self.location.origin) {
+        // Two Unity unzip helpers repeat the game's folder in their JSZip URL.
+        url.pathname = url.pathname.replace(/\/(hide-n-seek|city-smash)\/main\/\1\/lib\/jszip\.min\.js$/, '/$1/lib/jszip.min.js');
         const fix = CROSS_ORIGIN_FIXES.find(([re]) => re.test(url.href));
         if (fix) {
             event.respondWith(fix[1](event.request));
@@ -426,6 +466,27 @@ self.addEventListener("fetch", (event) => {
                                 .replace("'sdk.js'", JSON.stringify(new URL("sdk.js", url.href).href))
                                 // The disabled promo feed otherwise fetches the HTML page as JSON.
                                 .replace("'JqIoy':_p2_0x465c('0xae')", "'JqIoy':'data:application/json,%7B%22banners%22:%5B%5D,%22interval%22:0%7D'");
+                        } else if (/\/genizy\/cc3d-mobile@[^/]+\/CrazyCattle3D\.audio\.position\.worklet\.js$/.test(url.pathname)) {
+                            body = (await res.text()).replaceAll(' ? .', '?.');
+                        } else if (/\/youtube-playables@[^/]+\/crossy-road\/scripts\/game\.min\.js$/.test(url.pathname)) {
+                            body = (await res.text()).replaceAll('Game.audioManager.SetVolume(', 'Game.audioManager?.SetVolume(');
+                        } else if (/\/LAMAR@[^/]+\/bobtherobber2\/bob-the-robber-2\.min\.f\.js$/.test(url.pathname)) {
+                            // Display banners are optional; an unavailable ad SDK must not reject into the game.
+                            body = (await res.text()).replace('Promise.reject("GD Sdk not available, probably due to adblocker")', 'Promise.resolve()')
+                                .replace(/gdsdk\.showAd\(s\.display,\s*\{\s*containerId: this\.element\.id\s*\}\)/, '$&.catch(() => {})');
+                        } else if (/\/Replku\/Ovo@[^/]+\/unlockalllevels\.js$/.test(url.pathname)) {
+                            // The mod can load twice; keep its translation cache in a dedicated reusable global.
+                            body = (await res.text()).replace(/\bcache\b/g, 'ovoTranslationCache')
+                                .replace('let ovoTranslationCache = {};', 'var ovoTranslationCache = globalThis.ovoTranslationCache || {};')
+                                .replace(/async function getTranslations\(\) \{[\s\S]*?\r?\n\}\r?\n\r?\nfunction listLanguages/,
+                                    `async function getTranslations() {
+                                        const json = await (await fetch('languages.json')).json();
+                                        c2_callFunction('Language > LoadLanguageFile', [JSON.stringify(json)]);
+                                        globalThis.languageJSON = json;
+                                        return json;
+                                    }\n\nfunction listLanguages`);
+                        } else if (/\/Synic-dx\/blackJack@[^/]+\/script\.js$/.test(url.pathname)) {
+                            body = (await res.text()).replace(/(\w+Sound)\.play\(\);/g, '$1.play().catch(() => {});');
                         }
                         return new Response(body, {status:res.status, headers});
                     }

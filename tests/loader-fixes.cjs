@@ -150,10 +150,100 @@ test('Brotato queries its own service-worker registration while preserving expli
     assert.deepEqual(seen,[context.location.href,'https://example.test/explicit']);
 });
 
-test('OvO defers canvas-dependent code and loads the bundled translation pack', () => {
+test('OvO defers canvas-dependent code', () => {
     const fixed=worker.rewrite('Replku/Ovo@<script src="unlockalllevels.js"></script>');
     assert.ok(fixed.includes('defer src="unlockalllevels.js"'));
-    assert.ok(fixed.includes("fetch('languages.json')"));
+});
+
+test('Color Match queues framework callbacks until its Unity instance exists', () => {
+    const context={delivered:[]};
+    vm.runInNewContext(worker.rewrite(`// ColorMatch.data.unityweb
+        var unityGameInstance = null;
+        unityGameInstance.SendMessage('SaveManager','Ready','saved');
+        const unityInstance = {SendMessage: (...args) => delivered.push(args)};
+        unityGameInstance = unityInstance;`),context);
+    assert.deepEqual(Array.from(context.delivered[0]),['SaveManager','Ready','saved']);
+    assert.equal(context.pendingUnityMessages.length,0);
+});
+
+test('Soccer Random keeps its keyboard handler executable after export minification', () => {
+    let handler, prevented=0;
+    const source=`// G-MENBM6GSNY\nwindow.addEventListener('keydown',function(e) { // space and arrow keys if([32,37,38,39,40].includes(e.keyCode)) {e.preventDefault();} });`;
+    vm.runInNewContext(worker.rewrite(source),{window:{addEventListener(name,callback){handler=callback;}}});
+    handler({keyCode:32,preventDefault(){prevented++;}});
+    handler({keyCode:65,preventDefault(){prevented++;}});
+    assert.equal(prevented,1);
+});
+
+test('TileTopia starts without unregistering the hub worker or clearing its caches', () => {
+    const source=`youtube-playables@main/tiletopia/
+        <script>navigator.serviceWorker.getRegistration("../..").then(reg=>reg.unregister());caches.delete('game');</script>
+        <script>window.addEventListener('load',()=>{navigator.serviceWorker.register("ServiceWorker.js");});createUnityInstance();</script>`;
+    const fixed=worker.rewrite(source);
+    assert.ok(!fixed.includes('getRegistration') && !fixed.includes('caches.delete') && !fixed.includes('serviceWorker.register'));
+    assert.ok(fixed.includes('createUnityInstance()'));
+});
+
+test('host-only bridges and missing Draw Climber ads do not stop startup', () => {
+    assert.ok(!worker.rewrite('google-class/coreball/<script>window.parent.maeExportApis_();</script>').includes('maeExportApis_'));
+    const fixed=worker.rewrite('yrgen73/draw-cl<body onload="sdk.showBanner();"><script>egret.runEgret({});</script>');
+    assert.ok(!fixed.includes('sdk.showBanner'));
+    assert.ok(fixed.includes('egret.runEgret'));
+});
+
+test('Construct workers use a blob entry and resolve their imports against the real script', async () => {
+    const body=worker.rewrite('<head><base href="https://cdn.jsdelivr.net/gh/example/repo@main/games/evowars/"></head>');
+    const script=body.match(/<script>([\s\S]*?)<\/script>/)[1];
+    const context={window:{Worker:class {constructor(path,options){this.path=path;this.options=options;}}},document:{baseURI:'https://cdn.jsdelivr.net/gh/example/repo@main/games/evowars/'},location:{origin:'https://larp.mom'},URL,Blob};
+    vm.runInNewContext(script,context);
+    const instance=new context.window.Worker('ws_worker.js?1.12.8',{name:'network'});
+    assert.ok(instance.path.startsWith('blob:'));
+    assert.equal(instance.options.name,'network');
+    const imports=[], realm={URL,importScripts:url=>imports.push(url)};realm.self=realm;
+    vm.runInNewContext(await (await fetch(instance.path)).text(),realm);
+    realm.importScripts('msgpack.min.js');
+    assert.deepEqual(imports,['https://esm.sh/gh/example/repo@main/games/evowars/ws_worker.js?1.12.8&raw','https://esm.sh/gh/example/repo@main/games/evowars/msgpack.min.js?raw']);
+    URL.revokeObjectURL(instance.path);
+    assert.equal(new context.window.Worker('/local.js').path,'/local.js');
+});
+
+test('external startup patches keep optional audio and ad callbacks safe', async () => {
+    const cases=[
+        ['https://cdn.jsdelivr.net/gh/genizy/cc3d-mobile@main/CrazyCattle3D.audio.position.worklet.js',"globalThis.ended = event ? .data ? .type === 'ended';",{event:{data:{type:'ended'}}},ctx=>assert.equal(ctx.ended,true)],
+        ['https://cdn.jsdelivr.net/gh/bubbls/youtube-playables@latest/crossy-road/scripts/game.min.js','Game.audioManager.SetVolume(0.8);Game.mute=false;', {Game:{audioManager:null,mute:true}},ctx=>assert.equal(ctx.Game.mute,false)],
+        ['https://cdn.jsdelivr.net/gh/wnasmile/LAMAR@main/bobtherobber2/bob-the-robber-2.min.f.js','globalThis.pending = gdsdk.showAd(s.display, {containerId: this.element.id});',{element:{id:'banner'},s:{display:'display'},gdsdk:{showAd:()=>Promise.reject('No ad provider')}},async ctx=>assert.equal(await ctx.pending,undefined)],
+        ['https://cdn.jsdelivr.net/gh/Synic-dx/blackJack@main/script.js','drawCardSound.play();globalThis.dealt=true;',{drawCardSound:{play:()=>Promise.reject(new Error('Unsupported optional audio'))}},async ctx=>{await Promise.resolve();assert.equal(ctx.dealt,true);}],
+    ];
+    for (const [url,source,context,check] of cases) {
+        worker.fetch=async()=>new Response(source);
+        let pending;
+        listeners.fetch({request:new Request(url),respondWith(value){pending=Promise.resolve(value);}});
+        vm.runInNewContext(await (await pending).text(),context);
+        await check(context);
+    }
+});
+
+test('OvO can reload its translation helper without redeclaring or clearing its cache', async () => {
+    worker.fetch=async()=>new Response('let cache = {}; function remember(){cache.hello="world";}\nasync function getTranslations() {\nthrow Error("Retired sheet");\n}\n\nfunction listLanguages() {}');
+    let pending;
+    listeners.fetch({request:new Request('https://cdn.jsdelivr.net/gh/Replku/Ovo@123/unlockalllevels.js'),respondWith(value){pending=value;}});
+    const source=await (await pending).text(), context={fetch:async url=>{assert.equal(url,'languages.json');return {json:async()=>({languages:{en:'English'}})};},c2_callFunction(){}};
+    vm.runInNewContext(source,context);
+    context.remember();
+    vm.runInNewContext(source,context);
+    assert.equal(context.ovoTranslationCache.hello,'world');
+    assert.equal((await context.getTranslations()).languages.en,'English');
+});
+
+test('Unity unzip helpers request JSZip from the actual game directory', async () => {
+    let requested;
+    worker.fetch=async url=>{requested=url;return new Response('window.zipReady=true;');};
+    for (const game of ['hide-n-seek','city-smash']) {
+        let pending;
+        listeners.fetch({request:new Request(`https://cdn.jsdelivr.net/gh/bubbls/youtube-playables@main/${game}/main/${game}/lib/jszip.min.js`),respondWith(value){pending=value;}});
+        await pending;
+        assert.equal(requested,`https://esm.sh/gh/bubbls/youtube-playables@main/${game}/lib/jszip.min.js?raw`);
+    }
 });
 
 test('Paper.io uses its asset root and preserves the asynchronous no-ad SDK lifecycle', async () => {

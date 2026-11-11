@@ -31,13 +31,17 @@ function describe(value) {
 }
 function optionalScript(url) {
     // Some ports wrap deliberately disabled ad URLs in a null.html placeholder.
-    if (url.pathname.endsWith('/null.html')) {
+    if (/\/null\.(?:html|php)$/.test(url.pathname)) {
         try { url = new URL(url.search.slice(1)); } catch (_) { return false; }
     }
     // These scripts provide account, advertising or analytics features, not game assets.
     return (url.hostname === "account.y8.com" && url.pathname === "/api/user_data/autologin")
         || (url.hostname === "www.googletagmanager.com" && url.pathname === "/gtag/js")
         || (url.hostname === "pagead2.googlesyndication.com" && url.pathname.startsWith("/pagead/managed/js/adsense/"))
+        || (url.hostname === "pagead2.googlesyndication.com" && url.pathname === "/pagead/js/adsbygoogle.js")
+        || (/^(?:server|cdn)\.cpmstar\.com$/.test(url.hostname) && url.pathname.startsWith('/cached/zonefiles/'))
+        || (url.hostname === "api.adinplay.com" && url.pathname === "/libs/aiptag/assets/adsbygoogle.js")
+        || (url.hostname === "ssl.minijuegosgratis.com" && url.pathname === "/lechuck/js/unity/loader.js")
         || (url.hostname === "imasdk.googleapis.com" && url.pathname === "/js/sdkloader/ima3.js")
         || (url.hostname === "securepubads.g.doubleclick.net" && url.pathname === "/tag/js/gpt.js")
         || (url.hostname === "c.amazon-adsystem.com" && url.pathname === "/aax2/apstag.js")
@@ -45,7 +49,11 @@ function optionalScript(url) {
         || (url.hostname === "localstorage.goguardian" && url.pathname === "/xdLocalStorage.js")
         || (/^(?:(?:cdn|gcore|fastly|testingcf)\.jsdelivr\.net|esm\.sh|raw\.githubusercontent\.com)$/.test(url.hostname)
             && (/\/prebid[\d.]*\.js$/.test(url.pathname)
-                || /^\/gh\/(?:bubblfan\/ovo-3-dimension@[^/]+|taskmaster773\/google-class@[^/]+\/stickman-hook)\/$/.test(url.pathname)));
+                || /^\/gh\/(?:bubblfan\/ovo-3-dimension@[^/]+|taskmaster773\/google-class@[^/]+\/stickman-hook|bubbls\/escape-road@[^/]+\/drive.google.com\/escape%20road|bubbls\/UGS-Assets(?:@[^/]+)?\/roof%20snipe%202)\/$/.test(url.pathname)
+                || /^\/gh\/(?:yrgen73\/Jtrigger@[^/]+\/js\/adsdk|r3tq6l1\/gmsdk@[^/]+\/sdk|bubbls\/UGS-Assets@[^/]+\/cookieclicker\/showads|bubbls\/gunspin(?:@[^/]+)?\/patch\/js\/gd-sdk)\.js$/.test(url.pathname)));
+}
+function needsInteraction(reason) {
+    return reason?.name === 'NotAllowedError' && /(?:play\(\).*user.*interact|user gesture.*pointer lock)/i.test(reason.message);
 }
 window.lgDebug = (win) => {
     const log = (kind, message) => { if (win === gameFrame().contentWindow) note(kind, message); };
@@ -66,7 +74,7 @@ window.lgDebug = (win) => {
         }
         else log("error", e.error?.stack || e.message + (e.filename ? " @ " + e.filename + ":" + e.lineno : ""));
     }, true);
-    win.addEventListener("unhandledrejection", (e) => log("rejection", describe(e.reason)));
+    win.addEventListener("unhandledrejection", (e) => log(needsInteraction(e.reason) ? "interaction needed" : "rejection", describe(e.reason)));
     for (const level of ["error", "warn"]) {
         const orig = win.console[level];
         win.console[level] = (...args) => { log("console." + level, args.map(describe).join(" ")); return orig.apply(win.console, args); };
